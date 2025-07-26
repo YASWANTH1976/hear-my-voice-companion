@@ -160,19 +160,32 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     clearError();
   }, [clearError]);
 
-  // Advanced emotion analysis with context awareness
+  // Advanced emotion analysis with context awareness and negation handling
   const analyzeEmotion = useCallback((text: string): Emotion => {
     const lowerText = text.toLowerCase();
     
-    // Define emotion patterns with context
+    // Handle negations first - flip positive/negative emotions
+    const negationPatterns = /\b(not|don't|doesn't|can't|won't|isn't|aren't|wasn't|weren't|haven't|hasn't|hadn't|couldn't|wouldn't|shouldn't|mustn't|no|never)\s+/g;
+    const hasNegation = negationPatterns.test(lowerText);
+    
+    // Check for specific negative expressions
+    const negativeExpressions = [
+      'not good', 'not well', 'not okay', 'not fine', 'not great', 'not happy',
+      'not doing well', 'don\'t feel good', 'feeling bad', 'feeling down',
+      'not so good', 'could be better', 'having a hard time', 'struggling'
+    ];
+    
+    const hasNegativeExpression = negativeExpressions.some(expr => lowerText.includes(expr));
+    
+    // Define emotion patterns with better context
     const emotionPatterns = {
       anxiety: {
-        keywords: ['anxious', 'worried', 'nervous', 'panic', 'afraid', 'fear', 'scared', 'tense'],
+        keywords: ['anxious', 'worried', 'nervous', 'panic', 'afraid', 'fear', 'scared', 'tense', 'uneasy'],
         contexts: ['exam', 'interview', 'presentation', 'meeting', 'future', 'uncertainty'],
         intensity: { high: ['panic', 'terrified'], medium: ['worried', 'nervous'], low: ['concerned', 'uneasy'] }
       },
       sadness: {
-        keywords: ['sad', 'depressed', 'down', 'low', 'blue', 'crying', 'tears', 'grief'],
+        keywords: ['sad', 'depressed', 'down', 'low', 'blue', 'crying', 'tears', 'grief', 'upset', 'hurt'],
         contexts: ['loss', 'breakup', 'death', 'failure', 'rejection', 'alone', 'lonely'],
         intensity: { high: ['devastated', 'heartbroken'], medium: ['sad', 'down'], low: ['blue', 'melancholy'] }
       },
@@ -187,7 +200,7 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         intensity: { high: ['overwhelmed', 'breaking'], medium: ['stressed', 'pressure'], low: ['tired', 'busy'] }
       },
       happiness: {
-        keywords: ['happy', 'joy', 'excited', 'great', 'wonderful', 'amazing', 'fantastic', 'good'],
+        keywords: ['happy', 'joy', 'excited', 'great', 'wonderful', 'amazing', 'fantastic', 'good', 'fine', 'okay', 'well'],
         contexts: ['success', 'achievement', 'celebration', 'love', 'friendship'],
         intensity: { high: ['ecstatic', 'overjoyed'], medium: ['happy', 'excited'], low: ['good', 'pleasant'] }
       },
@@ -197,6 +210,16 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         intensity: { high: ['bewildered', 'lost'], medium: ['confused', 'uncertain'], low: ['unclear', 'puzzled'] }
       }
     };
+    
+    // If there's a negative expression, default to sadness
+    if (hasNegativeExpression) {
+      return {
+        type: 'sadness',
+        intensity: 'medium',
+        confidence: 0.8,
+        topics: []
+      };
+    }
 
     // Detect topics mentioned
     const topicPatterns = {
@@ -289,6 +312,40 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // Generate contextual responses
   const generateContextualResponse = (text: string, emotion: Emotion): string => {
     const lowerText = text.toLowerCase();
+    
+    // Handle direct conversational responses first
+    if (lowerText.includes('how are you')) {
+      return "Thank you for asking! I'm here and ready to listen to whatever you'd like to share. How are you feeling today?";
+    }
+    
+    if (lowerText.includes('hello') || lowerText.includes('hi ') || lowerText.startsWith('hi')) {
+      return "Hello! It's nice to hear from you. I'm here to listen and support you. How are you doing today?";
+    }
+    
+    if (lowerText.includes('thank you') || lowerText.includes('thanks')) {
+      return "You're very welcome! I'm glad I could help. Is there anything else you'd like to talk about?";
+    }
+    
+    // Handle "I am good/fine/okay" responses
+    if (lowerText.match(/\b(i am|i'm|im)\s+(good|fine|okay|well|great|doing well)\b/) && !lowerText.includes('not')) {
+      const responses = [
+        "That's wonderful to hear! I'm so glad you're feeling good today. What's been going well for you?",
+        "It's great that you're doing well! What's been bringing you joy or satisfaction lately?",
+        "I'm happy to hear you're feeling good! Is there anything specific that's made today positive for you?"
+      ];
+      return responses[Math.floor(Math.random() * responses.length)];
+    }
+    
+    // Handle negative responses like "I am not good"
+    if (lowerText.match(/\b(i am|i'm|im)\s+(not good|not well|not okay|not fine|not great)\b/) || 
+        lowerText.includes('not doing well') || lowerText.includes('could be better')) {
+      const responses = [
+        "I'm sorry to hear you're not feeling so good. That sounds difficult. Would you like to share what's been weighing on you?",
+        "It takes courage to share when you're not doing well. I'm here to listen. What's been challenging for you lately?",
+        "Thank you for being honest about how you're feeling. Sometimes it helps to talk about what's making things difficult. What's on your mind?"
+      ];
+      return responses[Math.floor(Math.random() * responses.length)];
+    }
     
     // Specific response patterns based on emotion and context
     const responseTemplates = {
