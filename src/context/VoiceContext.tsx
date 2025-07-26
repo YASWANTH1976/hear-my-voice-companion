@@ -81,7 +81,7 @@ export interface AIResponse {
   audioBlob?: Blob;
 }
 
-// Context interface
+  // Context interface
 interface VoiceContextType {
   // Language state
   selectedLanguage: string;
@@ -99,6 +99,7 @@ interface VoiceContextType {
   // AI responses
   aiResponse: AIResponse | null;
   responseHistory: AIResponse[];
+  conversationContext: string[];
   
   // Voice controls
   startRecording: () => Promise<void>;
@@ -138,6 +139,7 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [currentEmotion, setCurrentEmotion] = useState<Emotion | null>(null);
   const [aiResponse, setAiResponse] = useState<AIResponse | null>(null);
   const [responseHistory, setResponseHistory] = useState<AIResponse[]>([]);
+  const [conversationContext, setConversationContext] = useState<string[]>([]);
   const [currentStrategy, setCurrentStrategy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -157,78 +159,152 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setCurrentEmotion(null);
     setAiResponse(null);
     setResponseHistory([]);
+    setConversationContext([]);
     clearError();
   }, [clearError]);
 
-  // Advanced emotion analysis with context awareness and negation handling
+  // Advanced emotion analysis with comprehensive word detection
   const analyzeEmotion = useCallback((text: string): Emotion => {
-    const lowerText = text.toLowerCase();
+    const lowerText = text.toLowerCase().trim();
     
-    // Handle negations first - flip positive/negative emotions
-    const negationPatterns = /\b(not|don't|doesn't|can't|won't|isn't|aren't|wasn't|weren't|haven't|hasn't|hadn't|couldn't|wouldn't|shouldn't|mustn't|no|never)\s+/g;
-    const hasNegation = negationPatterns.test(lowerText);
-    
-    // Check for specific negative expressions
-    const negativeExpressions = [
-      'not good', 'not well', 'not okay', 'not fine', 'not great', 'not happy',
-      'not doing well', 'don\'t feel good', 'feeling bad', 'feeling down',
-      'not so good', 'could be better', 'having a hard time', 'struggling'
-    ];
-    
-    const hasNegativeExpression = negativeExpressions.some(expr => lowerText.includes(expr));
-    
-    // Define emotion patterns with better context
+    // Enhanced emotion patterns with comprehensive word detection
     const emotionPatterns = {
-      anxiety: {
-        keywords: ['anxious', 'worried', 'nervous', 'panic', 'afraid', 'fear', 'scared', 'tense', 'uneasy'],
-        contexts: ['exam', 'interview', 'presentation', 'meeting', 'future', 'uncertainty'],
-        intensity: { high: ['panic', 'terrified'], medium: ['worried', 'nervous'], low: ['concerned', 'uneasy'] }
+      happiness: {
+        keywords: [
+          // Basic positive words
+          'happy', 'joy', 'joyful', 'excited', 'great', 'wonderful', 'amazing', 'fantastic', 'awesome', 'brilliant',
+          'good', 'fine', 'okay', 'well', 'excellent', 'perfect', 'beautiful', 'lovely', 'nice', 'pleasant',
+          'cheerful', 'delighted', 'thrilled', 'elated', 'euphoric', 'ecstatic', 'overjoyed', 'blissful',
+          'content', 'satisfied', 'pleased', 'glad', 'grateful', 'thankful', 'blessed', 'lucky', 'fortunate',
+          'positive', 'optimistic', 'hopeful', 'confident', 'energetic', 'vibrant', 'lively', 'upbeat',
+          // Success/achievement
+          'success', 'win', 'won', 'achieve', 'accomplished', 'proud', 'celebration', 'celebrate',
+          'victory', 'triumph', 'milestone', 'breakthrough', 'progress', 'improvement', 'better'
+        ],
+        phrases: [
+          'feeling good', 'doing well', 'going great', 'so happy', 'really good', 'much better',
+          'love it', 'love this', 'best day', 'feeling amazing', 'on top of the world'
+        ],
+        intensity: { 
+          high: ['ecstatic', 'overjoyed', 'thrilled', 'euphoric', 'amazing', 'fantastic', 'brilliant'], 
+          medium: ['happy', 'excited', 'great', 'wonderful', 'delighted'], 
+          low: ['good', 'fine', 'okay', 'pleasant', 'nice'] 
+        }
       },
       sadness: {
-        keywords: ['sad', 'depressed', 'down', 'low', 'blue', 'crying', 'tears', 'grief', 'upset', 'hurt'],
-        contexts: ['loss', 'breakup', 'death', 'failure', 'rejection', 'alone', 'lonely'],
-        intensity: { high: ['devastated', 'heartbroken'], medium: ['sad', 'down'], low: ['blue', 'melancholy'] }
+        keywords: [
+          // Basic sad words
+          'sad', 'depressed', 'down', 'low', 'blue', 'unhappy', 'miserable', 'upset', 'hurt', 'pain', 'ache',
+          'crying', 'tears', 'weep', 'sob', 'grief', 'sorrow', 'mourning', 'heartbroken', 'devastated',
+          'lonely', 'alone', 'isolated', 'empty', 'hollow', 'broken', 'shattered', 'crushed', 'destroyed',
+          'hopeless', 'helpless', 'worthless', 'useless', 'failure', 'lost', 'defeated', 'disappointed',
+          'regret', 'remorse', 'guilt', 'shame', 'despair', 'melancholy', 'gloomy', 'dark', 'heavy',
+          // Negative states
+          'terrible', 'awful', 'horrible', 'bad', 'worse', 'worst', 'sick', 'ill', 'unwell'
+        ],
+        phrases: [
+          'not good', 'not well', 'not okay', 'not fine', 'not great', 'not happy', 'not doing well',
+          'feeling bad', 'feeling down', 'feeling low', 'feeling sad', 'could be better', 'having a hard time',
+          'going through', 'struggling with', 'dealing with', 'can\'t handle', 'too much', 'give up'
+        ],
+        intensity: { 
+          high: ['devastated', 'heartbroken', 'crushed', 'destroyed', 'hopeless', 'despair'], 
+          medium: ['sad', 'depressed', 'upset', 'hurt', 'lonely'], 
+          low: ['down', 'blue', 'disappointed', 'not good'] 
+        }
+      },
+      anxiety: {
+        keywords: [
+          'anxious', 'worried', 'nervous', 'panic', 'afraid', 'fear', 'scared', 'terrified', 'frightened',
+          'tense', 'uneasy', 'restless', 'jittery', 'edgy', 'stressed', 'overwhelmed', 'pressure',
+          'concern', 'concerned', 'trouble', 'troubled', 'disturbed', 'unsettled', 'agitated',
+          'paranoid', 'suspicious', 'insecure', 'uncertain', 'doubt', 'doubtful', 'questioning'
+        ],
+        phrases: [
+          'freaking out', 'losing it', 'can\'t breathe', 'heart racing', 'sweating', 'shaking',
+          'what if', 'worried about', 'scared of', 'afraid of', 'nervous about'
+        ],
+        intensity: { 
+          high: ['panic', 'terrified', 'freaking out', 'losing it'], 
+          medium: ['anxious', 'worried', 'nervous', 'scared'], 
+          low: ['concerned', 'uneasy', 'uncertain'] 
+        }
       },
       anger: {
-        keywords: ['angry', 'mad', 'furious', 'rage', 'hate', 'frustrated', 'irritated', 'annoyed'],
-        contexts: ['unfair', 'betrayal', 'injustice', 'disrespect', 'conflict'],
-        intensity: { high: ['furious', 'rage'], medium: ['angry', 'mad'], low: ['annoyed', 'irritated'] }
+        keywords: [
+          'angry', 'mad', 'furious', 'rage', 'hate', 'frustrated', 'irritated', 'annoyed', 'pissed',
+          'outraged', 'livid', 'fuming', 'enraged', 'irate', 'aggravated', 'exasperated', 'fed up',
+          'disgusted', 'revolted', 'appalled', 'offended', 'insulted', 'betrayed', 'cheated',
+          'unfair', 'unjust', 'wrong', 'stupid', 'ridiculous', 'absurd', 'crazy', 'insane'
+        ],
+        phrases: [
+          'pissed off', 'fed up', 'had enough', 'sick of', 'tired of', 'can\'t stand', 'drives me crazy',
+          'makes me mad', 'so angry', 'really mad', 'absolutely furious'
+        ],
+        intensity: { 
+          high: ['furious', 'rage', 'livid', 'enraged', 'absolutely furious'], 
+          medium: ['angry', 'mad', 'frustrated', 'pissed'], 
+          low: ['annoyed', 'irritated', 'fed up'] 
+        }
       },
       stress: {
-        keywords: ['stressed', 'overwhelmed', 'pressure', 'burden', 'exhausted', 'tired', 'overworked'],
-        contexts: ['work', 'job', 'deadline', 'money', 'financial', 'bills', 'health'],
-        intensity: { high: ['overwhelmed', 'breaking'], medium: ['stressed', 'pressure'], low: ['tired', 'busy'] }
-      },
-      happiness: {
-        keywords: ['happy', 'joy', 'excited', 'great', 'wonderful', 'amazing', 'fantastic', 'good', 'fine', 'okay', 'well'],
-        contexts: ['success', 'achievement', 'celebration', 'love', 'friendship'],
-        intensity: { high: ['ecstatic', 'overjoyed'], medium: ['happy', 'excited'], low: ['good', 'pleasant'] }
+        keywords: [
+          'stressed', 'stress', 'overwhelmed', 'pressure', 'burden', 'exhausted', 'tired', 'drained',
+          'overworked', 'swamped', 'buried', 'drowning', 'suffocating', 'breaking', 'snapping',
+          'deadline', 'rush', 'hurry', 'urgent', 'crisis', 'emergency', 'chaos', 'mess',
+          'juggling', 'balancing', 'managing', 'handling', 'coping', 'struggling'
+        ],
+        phrases: [
+          'too much', 'can\'t handle', 'breaking point', 'about to snap', 'losing control',
+          'so much pressure', 'under stress', 'stressed out', 'burned out', 'worn out'
+        ],
+        intensity: { 
+          high: ['overwhelmed', 'breaking', 'drowning', 'about to snap'], 
+          medium: ['stressed', 'pressure', 'exhausted', 'swamped'], 
+          low: ['tired', 'busy', 'juggling'] 
+        }
       },
       confusion: {
-        keywords: ['confused', 'lost', 'unclear', 'uncertain', 'puzzled', 'bewildered'],
-        contexts: ['decision', 'choice', 'direction', 'meaning', 'purpose'],
-        intensity: { high: ['bewildered', 'lost'], medium: ['confused', 'uncertain'], low: ['unclear', 'puzzled'] }
+        keywords: [
+          'confused', 'lost', 'unclear', 'uncertain', 'puzzled', 'bewildered', 'perplexed', 'baffled',
+          'don\'t understand', 'don\'t know', 'unsure', 'indecisive', 'torn', 'conflicted',
+          'mixed up', 'muddled', 'foggy', 'blank', 'stuck', 'blocked', 'stumped'
+        ],
+        phrases: [
+          'don\'t know what', 'not sure', 'can\'t decide', 'don\'t understand', 'makes no sense',
+          'so confused', 'totally lost', 'have no idea', 'what should i', 'what do you think'
+        ],
+        intensity: { 
+          high: ['bewildered', 'totally lost', 'have no idea'], 
+          medium: ['confused', 'uncertain', 'puzzled'], 
+          low: ['unsure', 'unclear', 'not sure'] 
+        }
       }
     };
+
+    // Check for negation patterns that flip emotions
+    const negationWords = ['not', 'don\'t', 'doesn\'t', 'can\'t', 'won\'t', 'isn\'t', 'aren\'t', 'wasn\'t', 'weren\'t', 'haven\'t', 'hasn\'t', 'hadn\'t', 'couldn\'t', 'wouldn\'t', 'shouldn\'t', 'mustn\'t', 'no', 'never', 'nothing', 'nobody', 'none'];
     
-    // If there's a negative expression, default to sadness
-    if (hasNegativeExpression) {
-      return {
-        type: 'sadness',
-        intensity: 'medium',
-        confidence: 0.8,
-        topics: []
-      };
+    // Check for explicit negative phrases first
+    const negativeStates = [
+      'not good', 'not well', 'not okay', 'not fine', 'not great', 'not happy', 'not doing well',
+      'feeling bad', 'feeling down', 'feeling terrible', 'could be better', 'having a hard time',
+      'not so good', 'not really', 'not particularly', 'struggling', 'going through'
+    ];
+
+    const hasNegativeState = negativeStates.some(phrase => lowerText.includes(phrase));
+    if (hasNegativeState) {
+      return { type: 'sadness', intensity: 'medium', confidence: 0.85, topics: [] };
     }
 
-    // Detect topics mentioned
+    // Detect topics
     const topicPatterns = {
-      work: ['work', 'job', 'career', 'boss', 'colleague', 'office', 'project', 'deadline'],
-      relationship: ['relationship', 'partner', 'boyfriend', 'girlfriend', 'marriage', 'family', 'friend'],
-      health: ['health', 'sick', 'illness', 'doctor', 'hospital', 'pain', 'medical'],
-      financial: ['money', 'financial', 'bills', 'debt', 'expensive', 'cost', 'budget'],
-      academic: ['study', 'exam', 'school', 'college', 'university', 'grade', 'education'],
-      future: ['future', 'tomorrow', 'next', 'plan', 'goal', 'uncertain', 'unknown']
+      work: ['work', 'job', 'career', 'boss', 'colleague', 'office', 'project', 'deadline', 'meeting', 'presentation', 'salary', 'promotion', 'company', 'business', 'professional', 'workplace', 'employee', 'manager'],
+      relationship: ['relationship', 'partner', 'boyfriend', 'girlfriend', 'husband', 'wife', 'marriage', 'family', 'friend', 'love', 'dating', 'romance', 'breakup', 'divorce', 'parents', 'children', 'kids'],
+      health: ['health', 'sick', 'illness', 'doctor', 'hospital', 'pain', 'medical', 'medicine', 'treatment', 'disease', 'injury', 'physical', 'mental health', 'therapy', 'counseling'],
+      financial: ['money', 'financial', 'bills', 'debt', 'expensive', 'cost', 'budget', 'income', 'salary', 'poor', 'rich', 'bank', 'loan', 'mortgage', 'rent', 'payment'],
+      academic: ['study', 'exam', 'school', 'college', 'university', 'grade', 'education', 'student', 'teacher', 'class', 'homework', 'assignment', 'test', 'degree', 'learning'],
+      future: ['future', 'tomorrow', 'next', 'plan', 'goal', 'dream', 'hope', 'wish', 'want', 'will', 'going to', 'expecting', 'anticipating']
     };
 
     let detectedEmotion: keyof typeof emotionPatterns = 'happiness';
@@ -237,42 +313,55 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     let confidence = 0;
     let topics: string[] = [];
 
-    // Analyze emotions
+    // Score each emotion
     Object.entries(emotionPatterns).forEach(([emotion, patterns]) => {
       let score = 0;
       
-      // Check keywords
+      // Check keywords (higher weight)
       patterns.keywords.forEach(keyword => {
         if (lowerText.includes(keyword)) {
-          score += 2;
+          score += 3;
           
-          // Check intensity
+          // Determine intensity
           if (patterns.intensity.high.includes(keyword)) intensity = 'high';
           else if (patterns.intensity.medium.includes(keyword)) intensity = 'medium';
           else intensity = 'low';
         }
       });
       
-      // Check contexts
-      patterns.contexts.forEach(context => {
-        if (lowerText.includes(context)) {
-          score += 1;
-        }
-      });
+      // Check phrases (highest weight)
+      if (patterns.phrases) {
+        patterns.phrases.forEach(phrase => {
+          if (lowerText.includes(phrase)) {
+            score += 4;
+            intensity = 'medium';
+          }
+        });
+      }
       
       if (score > maxScore) {
         maxScore = score;
         detectedEmotion = emotion as keyof typeof emotionPatterns;
-        confidence = Math.min(score / 5, 1);
+        confidence = Math.min(score / 8, 1);
       }
     });
 
-    // Detect topics
+    // Detect topics mentioned
     Object.entries(topicPatterns).forEach(([topic, keywords]) => {
       if (keywords.some(keyword => lowerText.includes(keyword))) {
         topics.push(topic);
       }
     });
+
+    // If no strong emotion detected but we have words, default to neutral happiness
+    if (maxScore === 0 && lowerText.length > 0) {
+      return {
+        type: 'happiness',
+        intensity: 'low',
+        confidence: 0.3,
+        topics
+      };
+    }
 
     return {
       type: detectedEmotion,
@@ -282,7 +371,7 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
   }, []);
 
-  // Generate contextual AI responses
+  // Generate contextual AI responses with conversation memory
   const generateAIResponse = useCallback(async (text: string) => {
     if (!text.trim()) return;
 
@@ -290,8 +379,11 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const emotion = analyzeEmotion(text);
       setCurrentEmotion(emotion);
 
-      // Generate contextual response based on emotion, topics, and actual words
-      const response = generateContextualResponse(text, emotion);
+      // Add to conversation context
+      setConversationContext(prev => [...prev.slice(-4), text]); // Keep last 5 exchanges
+
+      // Generate contextual response based on emotion, topics, conversation history, and actual words
+      const response = generateContextualResponse(text, emotion, conversationContext);
       
       const aiResp: AIResponse = {
         text: response,
@@ -307,140 +399,236 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } catch (err) {
       setError('Failed to generate AI response');
     }
-  }, [analyzeEmotion]);
+  }, [analyzeEmotion, conversationContext]);
 
-  // Generate contextual responses
-  const generateContextualResponse = (text: string, emotion: Emotion): string => {
+  // Generate contextual responses with conversation awareness
+  const generateContextualResponse = (text: string, emotion: Emotion, context: string[] = []): string => {
+    const lowerText = text.toLowerCase().trim();
+    
+    // Check if this is a follow-up response to a previous question
+    const lastContext = context[context.length - 1] || '';
+    const isFollowUp = context.length > 0 && (
+      lowerText.length < 50 || // Short responses often follow-ups
+      lowerText.includes('because') || 
+      lowerText.includes('since') ||
+      lowerText.includes('well') ||
+      lowerText.includes('actually') ||
+      lowerText.includes('you know')
+    );
+
+    // Direct conversational patterns
+    const conversationPatterns = [
+      // Greetings
+      {
+        patterns: ['hello', 'hi ', 'hey ', 'good morning', 'good afternoon', 'good evening'],
+        responses: [
+          "Hello! It's wonderful to hear from you. I'm here to listen and support you in whatever way I can. How are you feeling today?",
+          "Hi there! I'm so glad you're here. I'm ready to listen to whatever you'd like to share. What's on your mind?",
+          "Hey! Thanks for reaching out. I'm here to provide a safe space for you to express yourself. How has your day been?"
+        ]
+      },
+      
+      // How are you
+      {
+        patterns: ['how are you', 'how do you feel', 'what about you'],
+        responses: [
+          "Thank you for asking! I'm here and fully present, ready to focus entirely on you and how you're feeling. What would you like to talk about?",
+          "I appreciate you asking! I'm doing well and I'm here to listen. More importantly, how are YOU doing today?",
+          "That's so kind of you to ask! I'm good and ready to support you. I'd love to hear about how you're feeling right now."
+        ]
+      },
+      
+      // Positive states
+      {
+        patterns: ['i am good', 'i\'m good', 'im good', 'i am fine', 'i\'m fine', 'im fine', 'i am okay', 'i\'m okay', 'im okay', 'doing well', 'feeling good', 'i am great', 'i\'m great'],
+        responses: [
+          "That's absolutely wonderful to hear! I'm so happy you're feeling good. What's been contributing to this positive feeling?",
+          "I love hearing that! It's beautiful when things are going well. What's been the highlight of your day or week?",
+          "That brings me joy to hear! When we feel good, it's worth celebrating. What specific things have been going right for you?"
+        ]
+      },
+      
+      // Negative states
+      {
+        patterns: ['not good', 'not well', 'not okay', 'not fine', 'not great', 'not doing well', 'feeling bad', 'feeling down', 'could be better', 'having a hard time', 'struggling'],
+        responses: [
+          "I'm really sorry to hear you're going through a difficult time. That takes courage to share. What's been weighing most heavily on your mind?",
+          "Thank you for being honest about how you're feeling. It's completely okay to not be okay. Would you like to tell me more about what's been challenging?",
+          "I hear you, and I want you to know that your feelings are completely valid. Sometimes life can be really tough. What's been the hardest part for you lately?"
+        ]
+      },
+      
+      // Thanks
+      {
+        patterns: ['thank you', 'thanks', 'appreciate', 'grateful'],
+        responses: [
+          "You're so very welcome! I'm genuinely glad I could help in some way. Is there anything else you'd like to explore or talk about?",
+          "It means a lot to hear that! I'm here whenever you need someone to listen. What else is on your mind?",
+          "I'm touched that you found our conversation helpful! That's exactly why I'm here. How else can I support you today?"
+        ]
+      },
+      
+      // Questions about AI
+      {
+        patterns: ['what are you', 'who are you', 'are you real', 'are you human'],
+        responses: [
+          "I'm an AI companion designed to provide emotional support and be a good listener. While I'm not human, I'm here to offer genuine care and understanding. What matters most is that you feel heard and supported.",
+          "I'm an AI created to help people process their emotions and thoughts. I may not be human, but I'm programmed with empathy and genuine concern for your wellbeing. How can I best support you today?",
+          "I'm an artificial intelligence, but my purpose is very real - to provide you with a safe, judgment-free space to express yourself. What would you like to talk about?"
+        ]
+      }
+    ];
+
+    // Check conversation patterns first
+    for (const pattern of conversationPatterns) {
+      if (pattern.patterns.some(p => lowerText.includes(p))) {
+        return pattern.responses[Math.floor(Math.random() * pattern.responses.length)];
+      }
+    }
+
+    // Handle follow-up responses
+    if (isFollowUp && context.length > 0) {
+      const followUpResponses = [
+        `I really appreciate you sharing that with me. ${generateEmotionalResponse(text, emotion)}`,
+        `Thank you for opening up about that. ${generateEmotionalResponse(text, emotion)}`,
+        `That gives me a much clearer picture. ${generateEmotionalResponse(text, emotion)}`,
+        `I'm glad you felt comfortable sharing more. ${generateEmotionalResponse(text, emotion)}`
+      ];
+      return followUpResponses[Math.floor(Math.random() * followUpResponses.length)];
+    }
+
+    // Generate emotion-based response
+    return generateEmotionalResponse(text, emotion);
+  };
+
+  // Generate emotion-specific responses
+  const generateEmotionalResponse = (text: string, emotion: Emotion): string => {
+    
     const lowerText = text.toLowerCase();
     
-    // Handle direct conversational responses first
-    if (lowerText.includes('how are you')) {
-      return "Thank you for asking! I'm here and ready to listen to whatever you'd like to share. How are you feeling today?";
-    }
-    
-    if (lowerText.includes('hello') || lowerText.includes('hi ') || lowerText.startsWith('hi')) {
-      return "Hello! It's nice to hear from you. I'm here to listen and support you. How are you doing today?";
-    }
-    
-    if (lowerText.includes('thank you') || lowerText.includes('thanks')) {
-      return "You're very welcome! I'm glad I could help. Is there anything else you'd like to talk about?";
-    }
-    
-    // Handle "I am good/fine/okay" responses
-    if (lowerText.match(/\b(i am|i'm|im)\s+(good|fine|okay|well|great|doing well)\b/) && !lowerText.includes('not')) {
-      const responses = [
-        "That's wonderful to hear! I'm so glad you're feeling good today. What's been going well for you?",
-        "It's great that you're doing well! What's been bringing you joy or satisfaction lately?",
-        "I'm happy to hear you're feeling good! Is there anything specific that's made today positive for you?"
-      ];
-      return responses[Math.floor(Math.random() * responses.length)];
-    }
-    
-    // Handle negative responses like "I am not good"
-    if (lowerText.match(/\b(i am|i'm|im)\s+(not good|not well|not okay|not fine|not great)\b/) || 
-        lowerText.includes('not doing well') || lowerText.includes('could be better')) {
-      const responses = [
-        "I'm sorry to hear you're not feeling so good. That sounds difficult. Would you like to share what's been weighing on you?",
-        "It takes courage to share when you're not doing well. I'm here to listen. What's been challenging for you lately?",
-        "Thank you for being honest about how you're feeling. Sometimes it helps to talk about what's making things difficult. What's on your mind?"
-      ];
-      return responses[Math.floor(Math.random() * responses.length)];
-    }
-    
-    // Specific response patterns based on emotion and context
+    // Emotion-specific response templates with topic awareness
     const responseTemplates = {
+      happiness: {
+        work: [
+          "It's fantastic to hear positive things about your work! Success at work can be so fulfilling. What specifically has been going well?",
+          "Work satisfaction is such a wonderful feeling! I love hearing when things are clicking professionally. What's been the best part?",
+          "That's amazing! When work is going well, it can boost our whole mood. What achievement or moment made you feel this way?"
+        ],
+        relationship: [
+          "Relationship happiness is so beautiful to witness! Love and connection bring such joy. What's been special about your relationships lately?",
+          "I can hear the warmth in your voice when you talk about this! Healthy relationships are such a blessing. What made this moment meaningful?",
+          "It's wonderful when our relationships bring us joy! Tell me more about what's been going well with the people you care about."
+        ],
+        general: [
+          "Your happiness radiates through your words! It's beautiful to hear someone feeling genuinely good. What's been bringing you the most joy?",
+          "I love the positive energy I'm hearing! When we feel good, it's worth celebrating and understanding. What's contributed to this wonderful mood?",
+          "It's such a gift to hear genuine happiness! These moments are precious. What would you say has been the source of these good feelings?"
+        ]
+      },
+      
+      sadness: {
+        work: [
+          "Work difficulties can really weigh on us emotionally. It's completely understandable to feel down when professional life is challenging. What's been the hardest part about work lately?",
+          "Job struggles can affect so much more than just our career - they impact our whole sense of wellbeing. I'm sorry you're going through this. What support would be most helpful?",
+          "When work isn't going well, it can feel like everything else suffers too. Your feelings about this are completely valid. What aspect of work has been most disappointing or difficult?"
+        ],
+        relationship: [
+          "Relationship pain cuts so deep because these connections mean so much to us. I'm sorry you're hurting. What's been the most challenging part of this situation?",
+          "When relationships struggle, it can affect everything else in our lives. Your sadness about this is completely natural and valid. How has this been impacting you?",
+          "I can hear how much this relationship situation means to you, which makes the pain even more real. What would help you process these difficult feelings?"
+        ],
+        health: [
+          "Health concerns can be so scary and overwhelming. It's natural to feel sad or worried when our bodies aren't cooperating. What's been the most concerning part for you?",
+          "Dealing with health issues brings up so many emotions - fear, sadness, frustration. Your feelings are completely understandable. How are you coping with everything?",
+          "When our health is affected, it impacts every aspect of our lives. I'm sorry you're going through this. What kind of support would be most helpful right now?"
+        ],
+        general: [
+          "I can really hear the sadness in your voice, and I want you to know that these feelings are completely valid. Sometimes we need to sit with sadness to understand what it's telling us. What's been weighing most heavily on your heart?",
+          "Sadness can feel so isolating, but you're not alone in this. Thank you for trusting me with these difficult feelings. What's been the hardest part of what you're going through?",
+          "Your sadness matters, and it deserves attention and care. Sometimes talking through these feelings can help us understand them better. What do you think is at the core of these emotions?"
+        ]
+      },
+      
       anxiety: {
         work: [
-          "Work anxiety can be really overwhelming. What specific aspect of your work is causing you the most stress right now?",
-          "I understand how work pressures can create anxiety. Would you like to talk about what's happening at work, or try a breathing exercise to help calm your mind?",
-          "Workplace anxiety is very common. It sounds like you're dealing with a lot. What would help you feel more in control of the situation?"
+          "Work anxiety is incredibly common, especially with deadlines, presentations, or difficult colleagues. What specific aspect of your job is triggering the most anxiety right now?",
+          "Professional anxiety can be so consuming because work takes up such a big part of our lives. I understand how overwhelming this must feel. What would help you feel more in control?",
+          "Workplace stress and anxiety can affect our sleep, relationships, and overall wellbeing. You're not alone in feeling this way. What's been the biggest source of worry at work?"
+        ],
+        future: [
+          "Uncertainty about the future can create such persistent anxiety. Not knowing what's coming next is genuinely difficult for most people. What aspects of the future worry you most?",
+          "Future anxiety is so relatable - we want to feel prepared and secure, but life is inherently uncertain. What specific unknowns are keeping you up at night?",
+          "When we can't predict or control what's ahead, anxiety naturally kicks in. It's our mind's way of trying to prepare for every scenario. What future scenarios concern you most?"
         ],
         general: [
-          "I can hear the anxiety in what you're sharing. It's completely normal to feel this way, and you're not alone in this.",
-          "Anxiety can feel so consuming. What you're experiencing is valid. Would you like to explore what's triggering these feelings?",
-          "Thank you for sharing something so personal. When anxiety hits, it can feel overwhelming. What usually helps you feel a bit more grounded?"
+          "Anxiety can make everything feel urgent and overwhelming, even small things. Your feelings are completely valid - anxiety is real and affects millions of people. What tends to trigger these anxious feelings for you?",
+          "I can hear the worry in your voice, and I want you to know that anxiety is nothing to be ashamed of. It's your mind trying to protect you, even when there's no immediate danger. What helps you feel most grounded when anxiety hits?",
+          "Anxiety can make our minds race with 'what if' scenarios. It's exhausting to live with that constant worry. What physical or emotional symptoms have you been noticing?"
         ]
       },
-      sadness: {
+      
+      anger: {
+        work: [
+          "Workplace frustration can build up so quickly, especially when we feel unheard or treated unfairly. What happened at work that triggered these angry feelings?",
+          "Work anger often comes from feeling powerless or disrespected in professional situations. I can understand why you'd feel this way. What would help you feel more empowered in this situation?",
+          "When work environments become toxic or unreasonable, anger is a completely natural response. What boundaries need to be set or what changes need to happen?"
+        ],
         relationship: [
-          "Relationship pain can feel so deep and isolating. It's okay to feel sad about this - your feelings are completely valid.",
-          "I'm sorry you're going through this relationship difficulty. Sadness after relationship struggles is natural. How are you taking care of yourself right now?",
-          "It takes courage to share when you're feeling down about relationships. What aspect of this situation is weighing on you most?"
+          "Relationship conflicts can trigger such intense anger because these people matter so much to us. What happened that made you feel this way?",
+          "When someone we care about hurts or disappoints us, anger often masks deeper feelings of hurt or betrayal. What did this person do that crossed a line for you?",
+          "Relationship anger usually signals that an important boundary was crossed or a core value was violated. What do you need from this person or this situation?"
         ],
         general: [
-          "I can sense the sadness in your words. It's okay to sit with these feelings - they're telling you something important.",
-          "Sadness can feel so heavy sometimes. Thank you for trusting me with how you're feeling. What's been the hardest part of your day?",
-          "Your sadness is valid and deserves attention. Sometimes talking about it can help lighten the load a little."
+          "Anger is often our emotion that says 'this isn't right' or 'this isn't fair.' Your anger is telling you something important. What injustice or frustration triggered these feelings?",
+          "I can hear the intensity of your anger, and I want you to know that this emotion is valid. Anger often protects other vulnerable feelings underneath. What do you think your anger is trying to tell you?",
+          "Sometimes anger gives us the energy we need to make important changes or stand up for ourselves. What situation or person has pushed you to this point?"
         ]
       },
-      happiness: {
-        achievement: [
-          "I can hear the joy in your voice! It's wonderful when things go well. What made this moment special for you?",
-          "Your happiness is contagious! I love hearing about good things happening. Tell me more about what's bringing you joy.",
-          "It's so nice to hear you sounding happy! Success and good moments deserve to be celebrated. What are you most proud of?"
-        ],
-        general: [
-          "Your positive energy is lovely to experience! What's been the highlight of your day?",
-          "I'm so glad you're feeling good! Happiness is precious. What's contributing to this good mood?",
-          "It's wonderful to hear you in such good spirits! What's been bringing you joy lately?"
-        ]
-      },
+      
       stress: {
         work: [
-          "Work stress can be so draining. It sounds like you're carrying a heavy load right now. What's the biggest source of pressure?",
-          "I hear how stressed you are about work. That level of stress isn't sustainable. What support do you need right now?",
-          "Work-related stress affects so many people. You're not alone in feeling overwhelmed. What would help you feel more balanced?"
+          "Work stress can feel like drowning sometimes - too many deadlines, too many responsibilities, not enough time. What's been piling up that's making you feel most overwhelmed?",
+          "Professional stress affects our sleep, relationships, and physical health. It sounds like you're carrying a really heavy load right now. What would help you feel more balanced?",
+          "When work stress becomes chronic, it can feel like we're always 'on' and never able to truly relax. What aspects of your job are creating the most pressure?"
         ],
         financial: [
-          "Financial stress can create such anxiety about the future. It's understandable that you're feeling overwhelmed by money concerns.",
-          "Money worries can keep us up at night and affect everything else. What aspect of your financial situation is most stressful?",
-          "Financial pressure is one of the most common stressors. Your concerns are valid. How has this been affecting your daily life?"
+          "Financial stress hits at such a basic level of security - it affects how safe we feel about our future. Money worries can keep us up at night. What financial pressures are weighing on you most?",
+          "When money is tight, it seems like every decision becomes stressful because financial concerns touch everything. How has this financial stress been affecting your daily life and wellbeing?",
+          "Financial pressure can make us feel trapped or like we're failing, even when circumstances are often beyond our control. What would help you feel more financially secure or stable?"
         ],
         general: [
-          "Stress can make everything feel more difficult. It sounds like you're managing a lot right now. What's feeling most overwhelming?",
-          "I can hear how much pressure you're under. Stress affects us physically and emotionally. What would help you feel some relief?",
-          "Being stressed is exhausting. Thank you for sharing what you're going through. What usually helps you decompress?"
+          "Stress can make everything feel more difficult and overwhelming than it normally would. It sounds like you're juggling a lot right now. What feels like the most urgent or pressing stressor?",
+          "When we're stressed, our minds can't rest and our bodies stay tense. It's exhausting to live in that state. What usually helps you decompress when stress builds up like this?",
+          "Chronic stress affects every part of our lives - our patience, our relationships, our physical health. What kind of relief or support would be most helpful right now?"
         ]
       },
-      anger: {
-        injustice: [
-          "Your anger about this situation makes complete sense. When things feel unfair, anger is a natural response.",
-          "I can understand why you'd feel angry about this. Sometimes anger tells us that boundaries have been crossed or values violated.",
-          "It sounds like something really unfair happened. Anger can be a healthy response to injustice. What would help you process these feelings?"
-        ],
-        general: [
-          "Anger is telling you something important. It's okay to feel this way. What triggered these feelings?",
-          "I hear the frustration and anger in what you're sharing. These feelings are valid. What's been building up for you?",
-          "Anger can be so intense. Thank you for expressing it rather than keeping it bottled up. What's behind these feelings?"
-        ]
-      },
+      
       confusion: {
         decision: [
-          "Making decisions when you're feeling unclear can be really challenging. What options are you trying to choose between?",
-          "Confusion about big decisions is so normal. Sometimes we need to sit with uncertainty before clarity comes. What's the decision you're facing?",
-          "Decision-making can feel overwhelming when there's no clear right answer. What factors are you considering?"
+          "Big decisions can feel paralyzing when we can't see a clear 'right' answer. What decision are you trying to make, and what's making it feel so complicated?",
+          "Sometimes confusion about decisions comes from having too many good options, or from fear of making the wrong choice. What factors are you trying to balance in this decision?",
+          "Decision confusion often happens when our head says one thing but our heart says another, or when we're worried about disappointing others. What's pulling you in different directions?"
         ],
         general: [
-          "Feeling confused or uncertain is part of being human. It's okay not to have all the answers right now.",
-          "Confusion can be uncomfortable, but it's often a sign that you're growing or facing something new. What's feeling unclear?",
-          "It's okay to feel lost sometimes. Confusion often comes before clarity. What's been on your mind?"
+          "Feeling confused or lost is actually a very human experience - it often means we're growing or facing something new and complex. What area of your life feels most unclear right now?",
+          "Confusion can be uncomfortable because we naturally want clarity and certainty. Sometimes sitting with uncertainty is part of the process of figuring things out. What's been most puzzling or unclear for you?",
+          "When everything feels muddled or uncertain, it can be hard to know which way to turn. You're not alone in feeling this way. What would help bring some clarity to your situation?"
         ]
       }
     };
 
-    // Find the most relevant response
-    let selectedResponses = responseTemplates[emotion.type]?.general || responseTemplates.happiness.general;
-    
-    // Check for specific topics
+    // Check for specific topics first
     for (const topic of emotion.topics) {
       if (responseTemplates[emotion.type]?.[topic as keyof typeof responseTemplates[typeof emotion.type]]) {
-        selectedResponses = responseTemplates[emotion.type][topic as keyof typeof responseTemplates[typeof emotion.type]] as string[];
-        break;
+        const topicResponses = responseTemplates[emotion.type][topic as keyof typeof responseTemplates[typeof emotion.type]] as string[];
+        return topicResponses[Math.floor(Math.random() * topicResponses.length)];
       }
     }
 
-    // Add intensity modifiers
-    let response = selectedResponses[Math.floor(Math.random() * selectedResponses.length)];
+    // Default to general responses for the emotion type
+    const generalResponses = responseTemplates[emotion.type]?.general || responseTemplates.happiness.general;
+    // Add intensity modifiers and return response
+    let response = generalResponses[Math.floor(Math.random() * generalResponses.length)];
     
     if (emotion.intensity === 'high') {
       response += " This sounds particularly intense for you right now.";
@@ -590,6 +778,7 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     currentEmotion,
     aiResponse,
     responseHistory,
+    conversationContext,
     startRecording,
     stopRecording,
     clearTranscript,
