@@ -52,6 +52,23 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
+				// HearMeOut emotion colors
+				emotion: {
+					anxiety: 'hsl(var(--emotion-anxiety))',
+					sadness: 'hsl(var(--emotion-sadness))',
+					anger: 'hsl(var(--emotion-anger))',
+					stress: 'hsl(var(--emotion-stress))',
+					happiness: 'hsl(var(--emotion-happiness))',
+					confusion: 'hsl(var(--emotion-confusion))'
+				},
+				// Wellness strategy colors
+				wellness: {
+					breathing: 'hsl(var(--wellness-breathing))',
+					meditation: 'hsl(var(--wellness-meditation))',
+					relaxation: 'hsl(var(--wellness-relaxation))',
+					gratitude: 'hsl(var(--wellness-gratitude))',
+					grounding: 'hsl(var(--wellness-grounding))'
+				},
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',
