@@ -1,73 +1,179 @@
-# Welcome to your Lovable project
+# HearMeOut - AI Mental Health Companion
 
-## Project info
+![HearMeOut](https://img.shields.io/badge/HearMeOut-AI%20Mental%20Health%20Companion-blue?style=for-the-badge)
+![React](https://img.shields.io/badge/React-18-61DAFB?style=flat&logo=react)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=flat&logo=typescript)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-3-06B6D4?style=flat&logo=tailwindcss)
 
-**URL**: https://lovable.dev/projects/59ff44fb-b2fe-4866-b3de-91f838b71c92
+A production-ready, multilingual AI-powered mental health companion that provides real-time voice-based emotional support with personalized responses and interactive coping strategies.
 
-## How can I edit this code?
+## 🌟 Features
 
-There are several ways of editing your application.
+### 🎤 Voice Interface & Recognition
+- Real-time voice recognition using Web Speech API
+- Live transcription display with visual feedback
+- Animated waveform visualization during recording
+- Language-specific speech recognition for 10+ languages
+- Visual recording states with color-coded feedback
 
-**Use Lovable**
+### 🌍 Multilingual Support
+Support for 10+ languages with native script display:
+- **English** (en-IN)
+- **Hindi** (हिंदी) - hi-IN
+- **Telugu** (తెలుగు) - te-IN
+- **Tamil** (தமிழ்) - ta-IN
+- **Kannada** (ಕನ್ನಡ) - kn-IN
+- **Malayalam** (മലയാളം) - ml-IN
+- **Bengali** (বাংলা) - bn-IN
+- **Gujarati** (ગુજરાતી) - gu-IN
+- **Marathi** (मराठी) - mr-IN
+- **Punjabi** (ਪੰਜਾਬੀ) - pa-IN
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/59ff44fb-b2fe-4866-b3de-91f838b71c92) and start prompting.
+### 🧠 Advanced Emotion Detection
+- Contextual emotion analysis beyond simple keyword matching
+- Intensity levels: low, medium, high
+- Confidence scoring with visual progress bars
+- Multiple emotion categories:
+  - Anxiety/Fear
+  - Sadness/Depression
+  - Anger/Frustration
+  - Stress/Overwhelm
+  - Happiness/Joy
+  - Confusion/Uncertainty
 
-Changes made via Lovable will be committed automatically to this repo.
+### 🤖 Intelligent AI Response System
+- Context-aware responses that analyze specific topics
+- Personalized response generation based on:
+  - Detected emotion + intensity
+  - Specific concerns mentioned (work, relationships, health, etc.)
+  - User's actual words and context
+- Cultural sensitivity for different languages
+- Speech synthesis of AI responses in user's selected language
 
-**Use your preferred IDE**
+### 🧘 Interactive Wellness Strategies
+- **Guided Breathing Exercises**: 4-7-8 breathing technique with voice guidance
+- **5-Minute Guided Meditation**: Complete meditation session with voice instructions
+- **Progressive Muscle Relaxation**: Voice-guided muscle tension and release exercises
+- **Gratitude Practice**: Interactive gratitude journal session
+- **Grounding Techniques**: 5-4-3-2-1 sensory grounding exercise
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### 🎨 Professional UI/UX Design
+- Modern gradient design with blue-to-purple color scheme
+- Card-based layout with rounded corners and shadows
+- Smooth animations and transitions throughout
+- Responsive design for all screen sizes
+- Accessibility features with proper focus states
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### 🆘 Mental Health Resources
+- Verified helpline numbers:
+  - National Mental Health Programme: 1800-599-0019
+  - NIMHANS Helpline: 080-46110007
+  - Sneha India: 044-24640050
+- Direct calling functionality
+- Professional disclaimer about not replacing medical advice
 
-Follow these steps:
+### 🔒 Privacy & Security
+- 100% anonymous usage - no data collection
+- Local processing - all analysis happens in browser
+- No server storage of conversations
+- Clear privacy messaging in UI
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+## 🚀 Getting Started
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### Prerequisites
+- Node.js (v18 or higher)
+- npm or yarn
 
-# Step 3: Install the necessary dependencies.
-npm i
+### Installation
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/hearmeout.git
+cd hearmeout
+```
+
+2. Install dependencies:
+```bash
+npm install
+```
+
+3. Start the development server:
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+4. Open your browser and navigate to `http://localhost:5173`
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Building for Production
 
-**Use GitHub Codespaces**
+```bash
+npm run build
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## 🏗️ Tech Stack
 
-## What technologies are used for this project?
+- **Frontend**: React 18 with TypeScript
+- **Styling**: Tailwind CSS
+- **Icons**: Lucide React
+- **Build Tool**: Vite
+- **Speech Recognition**: Web Speech API
+- **Speech Synthesis**: speechSynthesis API
 
-This project is built with:
+## 📁 Project Structure
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+```
+src/
+├── components/
+│   ├── Header.tsx              # Language selector, branding
+│   ├── VoiceInterface.tsx      # Recording, transcription
+│   ├── EmotionDisplay.tsx      # Emotion analysis results
+│   ├── AIResponse.tsx          # Contextual AI responses
+│   ├── CopingStrategies.tsx    # Interactive wellness tools
+│   ├── Footer.tsx              # Resources, disclaimer
+│   └── ui/                     # Reusable UI components
+├── context/
+│   └── VoiceContext.tsx        # State management, AI logic
+├── hooks/                      # Custom React hooks
+├── lib/                        # Utility functions
+└── App.tsx                     # Main application component
+```
 
-## How can I deploy this project?
+## 🌐 Browser Support
 
-Simply open [Lovable](https://lovable.dev/projects/59ff44fb-b2fe-4866-b3de-91f838b71c92) and click on Share -> Publish.
+- Chrome 25+
+- Firefox 44+
+- Safari 14.1+
+- Edge 79+
 
-## Can I connect a custom domain to my Lovable project?
+**Note**: Speech recognition requires HTTPS in production and may have varying support across browsers.
 
-Yes, you can!
+## 🤝 Contributing
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## ⚠️ Disclaimer
+
+HearMeOut is designed to provide emotional support and wellness tools. It is not a substitute for professional medical advice, diagnosis, or treatment. If you are experiencing severe mental health issues or are in crisis, please contact emergency services or a mental health professional immediately.
+
+## 🙏 Acknowledgments
+
+- Web Speech API for voice recognition capabilities
+- React and the amazing open-source community
+- Mental health organizations for guidance on best practices
+- All contributors who help make mental health support more accessible
+
+## 📞 Support
+
+If you have any questions or need support, please open an issue on GitHub or contact us at support@hearmeout.com
+
+---
+
+Made with ❤️ for mental health awareness and support
