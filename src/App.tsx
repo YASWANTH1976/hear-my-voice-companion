@@ -10,6 +10,8 @@ import { VoiceInterface } from "@/components/VoiceInterface";
 import { EmotionDisplay } from "@/components/EmotionDisplay";
 import { AIResponse } from "@/components/AIResponse";
 import { CopingStrategies } from "@/components/CopingStrategies";
+import { MoodJournal } from "@/components/MoodJournal";
+import { QuickMoodCheck } from "@/components/QuickMoodCheck";
 import { Footer } from "@/components/Footer";
 import NotFound from "./pages/NotFound";
 
@@ -57,6 +59,12 @@ const MainApp = () => {
 
         {/* Coping Strategies */}
         <CopingStrategies />
+
+        {/* Wellness Tools */}
+        <div className="grid md:grid-cols-2 gap-6">
+          <QuickMoodCheck />
+          <MoodJournal />
+        </div>
       </main>
 
       <Footer />

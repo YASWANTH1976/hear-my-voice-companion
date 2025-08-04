@@ -379,9 +379,6 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const emotion = analyzeEmotion(text);
       setCurrentEmotion(emotion);
 
-      // Add to conversation context
-      setConversationContext(prev => [...prev.slice(-4), text]); // Keep last 5 exchanges
-
       // Generate contextual response based on emotion, topics, conversation history, and actual words
       const response = generateContextualResponse(text, emotion, conversationContext);
       
@@ -393,6 +390,9 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       setAiResponse(aiResp);
       setResponseHistory(prev => [aiResp, ...prev.slice(0, 9)]); // Keep last 10
+
+      // Add to conversation context AFTER generating response
+      setConversationContext(prev => [...prev.slice(-4), text]); // Keep last 5 exchanges
 
       // Speak the response
       speakResponse(response);
@@ -407,13 +407,16 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     
     // Check if this is a follow-up response to a previous question
     const lastContext = context[context.length - 1] || '';
-    const isFollowUp = context.length > 0 && (
-      lowerText.length < 50 || // Short responses often follow-ups
+    const isFollowUp = context.length > 1 && ( // Changed from > 0 to > 1
       lowerText.includes('because') || 
       lowerText.includes('since') ||
       lowerText.includes('well') ||
       lowerText.includes('actually') ||
-      lowerText.includes('you know')
+      lowerText.includes('you know') ||
+      lowerText.includes('yeah') ||
+      lowerText.includes('yes') ||
+      lowerText.includes('no') ||
+      (lowerText.length < 30 && !lowerText.includes('hello') && !lowerText.includes('hi')) // Short responses but not greetings
     );
 
     // Direct conversational patterns
