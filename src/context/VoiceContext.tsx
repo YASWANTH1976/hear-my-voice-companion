@@ -51,58 +51,34 @@ declare global {
   }
 }
 
-// Language configurations with native scripts
+// Language configurations with Indian languages prioritized
 export const SUPPORTED_LANGUAGES = {
-  'en-US': { name: 'English', nativeName: 'English', flag: '🇺🇸' },
+  'hi-IN': { name: 'Hindi', nativeName: 'हिन्दी', flag: '🇮🇳' },
+  'te-IN': { name: 'Telugu', nativeName: 'తెలుగు', flag: '🇮🇳' },
+  'ta-IN': { name: 'Tamil', nativeName: 'தமிழ்', flag: '🇮🇳' },
+  'ml-IN': { name: 'Malayalam', nativeName: 'മലയാളം', flag: '🇮🇳' },
+  'kn-IN': { name: 'Kannada', nativeName: 'ಕನ್ನಡ', flag: '🇮🇳' },
+  'bn-IN': { name: 'Bengali', nativeName: 'বাংলা', flag: '🇮🇳' },
+  'gu-IN': { name: 'Gujarati', nativeName: 'ગુજરાતી', flag: '🇮🇳' },
+  'mr-IN': { name: 'Marathi', nativeName: 'मराठी', flag: '🇮🇳' },
+  'pa-IN': { name: 'Punjabi', nativeName: 'ਪੰਜਾਬੀ', flag: '🇮🇳' },
+  'or-IN': { name: 'Odia', nativeName: 'ଓଡ଼ିଆ', flag: '🇮🇳' },
+  'as-IN': { name: 'Assamese', nativeName: 'অসমীয়া', flag: '🇮🇳' },
+  'ne-IN': { name: 'Nepali', nativeName: 'नेपाली', flag: '🇮🇳' },
+  'sa-IN': { name: 'Sanskrit', nativeName: 'संस्कृतम्', flag: '🇮🇳' },
+  'ur-IN': { name: 'Urdu', nativeName: 'اردو', flag: '🇮🇳' },
+  'en-IN': { name: 'English (India)', nativeName: 'English', flag: '🇮🇳' },
+  // Other major languages (secondary priority)
+  'en-US': { name: 'English (US)', nativeName: 'English', flag: '🇺🇸' },
   'es-ES': { name: 'Spanish', nativeName: 'Español', flag: '🇪🇸' },
   'fr-FR': { name: 'French', nativeName: 'Français', flag: '🇫🇷' },
   'de-DE': { name: 'German', nativeName: 'Deutsch', flag: '🇩🇪' },
-  'it-IT': { name: 'Italian', nativeName: 'Italiano', flag: '🇮🇹' },
   'pt-PT': { name: 'Portuguese', nativeName: 'Português', flag: '🇵🇹' },
-  'pt-BR': { name: 'Portuguese (Brazil)', nativeName: 'Português (Brasil)', flag: '🇧🇷' },
   'ja-JP': { name: 'Japanese', nativeName: '日本語', flag: '🇯🇵' },
   'ko-KR': { name: 'Korean', nativeName: '한국어', flag: '🇰🇷' },
   'zh-CN': { name: 'Chinese (Simplified)', nativeName: '中文 (简体)', flag: '🇨🇳' },
-  'zh-TW': { name: 'Chinese (Traditional)', nativeName: '中文 (繁體)', flag: '🇹🇼' },
-  'hi-IN': { name: 'Hindi', nativeName: 'हिन्दी', flag: '🇮🇳' },
   'ar-SA': { name: 'Arabic', nativeName: 'العربية', flag: '🇸🇦' },
   'ru-RU': { name: 'Russian', nativeName: 'Русский', flag: '🇷🇺' },
-  'nl-NL': { name: 'Dutch', nativeName: 'Nederlands', flag: '🇳🇱' },
-  'sv-SE': { name: 'Swedish', nativeName: 'Svenska', flag: '🇸🇪' },
-  'da-DK': { name: 'Danish', nativeName: 'Dansk', flag: '🇩🇰' },
-  'no-NO': { name: 'Norwegian', nativeName: 'Norsk', flag: '🇳🇴' },
-  'fi-FI': { name: 'Finnish', nativeName: 'Suomi', flag: '🇫🇮' },
-  'pl-PL': { name: 'Polish', nativeName: 'Polski', flag: '🇵🇱' },
-  'tr-TR': { name: 'Turkish', nativeName: 'Türkçe', flag: '🇹🇷' },
-  'th-TH': { name: 'Thai', nativeName: 'ไทย', flag: '🇹🇭' },
-  'vi-VN': { name: 'Vietnamese', nativeName: 'Tiếng Việt', flag: '🇻🇳' },
-  'id-ID': { name: 'Indonesian', nativeName: 'Bahasa Indonesia', flag: '🇮🇩' },
-  'ms-MY': { name: 'Malay', nativeName: 'Bahasa Melayu', flag: '🇲🇾' },
-  'he-IL': { name: 'Hebrew', nativeName: 'עברית', flag: '🇮🇱' },
-  'cs-CZ': { name: 'Czech', nativeName: 'Čeština', flag: '🇨🇿' },
-  'sk-SK': { name: 'Slovak', nativeName: 'Slovenčina', flag: '🇸🇰' },
-  'hu-HU': { name: 'Hungarian', nativeName: 'Magyar', flag: '🇭🇺' },
-  'ro-RO': { name: 'Romanian', nativeName: 'Română', flag: '🇷🇴' },
-  'bg-BG': { name: 'Bulgarian', nativeName: 'Български', flag: '🇧🇬' },
-  'hr-HR': { name: 'Croatian', nativeName: 'Hrvatski', flag: '🇭🇷' },
-  'sl-SI': { name: 'Slovenian', nativeName: 'Slovenščina', flag: '🇸🇮' },
-  'et-EE': { name: 'Estonian', nativeName: 'Eesti', flag: '🇪🇪' },
-  'lv-LV': { name: 'Latvian', nativeName: 'Latviešu', flag: '🇱🇻' },
-  'lt-LT': { name: 'Lithuanian', nativeName: 'Lietuvių', flag: '🇱🇹' },
-  'el-GR': { name: 'Greek', nativeName: 'Ελληνικά', flag: '🇬🇷' },
-  'uk-UA': { name: 'Ukrainian', nativeName: 'Українська', flag: '🇺🇦' },
-  'fa-IR': { name: 'Persian', nativeName: 'فارسی', flag: '🇮🇷' },
-  'ur-PK': { name: 'Urdu', nativeName: 'اردو', flag: '🇵🇰' },
-  'bn-BD': { name: 'Bengali', nativeName: 'বাংলা', flag: '🇧🇩' },
-  'ta-IN': { name: 'Tamil', nativeName: 'தமிழ்', flag: '🇮🇳' },
-  'te-IN': { name: 'Telugu', nativeName: 'తెలుగు', flag: '🇮🇳' },
-  'mr-IN': { name: 'Marathi', nativeName: 'मराठी', flag: '🇮🇳' },
-  'gu-IN': { name: 'Gujarati', nativeName: 'ગુજરાતી', flag: '🇮🇳' },
-  'kn-IN': { name: 'Kannada', nativeName: 'ಕನ್ನಡ', flag: '🇮🇳' },
-  'ml-IN': { name: 'Malayalam', nativeName: 'മലയാളം', flag: '🇮🇳' },
-  'pa-IN': { name: 'Punjabi', nativeName: 'ਪੰਜਾਬੀ', flag: '🇮🇳' },
-  'sw-KE': { name: 'Swahili', nativeName: 'Kiswahili', flag: '🇰🇪' },
-  'af-ZA': { name: 'Afrikaans', nativeName: 'Afrikaans', flag: '🇿🇦' },
 };
 
 // Emotion types with intensity levels
@@ -171,7 +147,7 @@ export const useVoice = () => {
 
 export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // State management
-  const [selectedLanguage, setSelectedLanguage] = useState('en-US');
+  const [selectedLanguage, setSelectedLanguage] = useState('hi-IN');
   const [isRecording, setIsRecording] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
