@@ -43,7 +43,11 @@ export const VoiceInterface: React.FC = () => {
     <div className="w-full max-w-2xl mx-auto space-y-6">
       {/* Error Display */}
       {error && (
-        <Alert className="border-destructive/50 text-destructive">
+        <Alert 
+          className="border-destructive/50 text-destructive"
+          role="alert"
+          aria-live="polite"
+        >
           <AlertDescription className="flex items-center justify-between">
             {error}
             <Button variant="ghost" size="sm" onClick={clearError}>
@@ -55,13 +59,15 @@ export const VoiceInterface: React.FC = () => {
 
       {/* Main Recording Interface */}
       <Card className="card-hover">
-        <CardContent className="pt-8 pb-8">
+        <CardContent className="pt-8 pb-8" role="region" aria-label="Voice recording interface">
           <div className="flex flex-col items-center space-y-6">
             {/* Recording Button */}
             <div className="relative">
               <Button
                 size="lg"
                 onClick={isRecording ? stopRecording : startRecording}
+                aria-label={isRecording ? 'Stop recording' : 'Start recording'}
+                aria-pressed={isRecording}
                 className={`
                   w-24 h-24 rounded-full text-white transition-all duration-300 transform
                   ${isRecording 
@@ -117,6 +123,9 @@ export const VoiceInterface: React.FC = () => {
                   : 'Share what\'s on your mind, I\'m here to help'
                 }
               </p>
+              <div className="sr-only" aria-live="polite">
+                {isRecording ? 'Recording in progress' : 'Ready to record'}
+              </div>
             </div>
 
             {/* Control Buttons */}
@@ -127,6 +136,7 @@ export const VoiceInterface: React.FC = () => {
                 onClick={handlePlayback}
                 disabled={!transcript || isRecording}
                 className="card-hover"
+                aria-label="Replay your recorded message"
               >
                 <Play className="h-4 w-4 mr-2" />
                 Replay
@@ -138,6 +148,7 @@ export const VoiceInterface: React.FC = () => {
                 onClick={clearTranscript}
                 disabled={!transcript || isRecording}
                 className="card-hover"
+                aria-label="Clear transcript and start over"
               >
                 <RotateCcw className="h-4 w-4 mr-2" />
                 Clear
@@ -149,7 +160,7 @@ export const VoiceInterface: React.FC = () => {
 
       {/* Live Transcript Display */}
       {transcript && (
-        <Card className="card-hover">
+        <Card className="card-hover" role="region" aria-label="Voice transcript">
           <CardContent className="pt-6">
             <div className="flex items-start space-x-3">
               <div className="gradient-primary p-2 rounded-lg">
@@ -157,10 +168,17 @@ export const VoiceInterface: React.FC = () => {
               </div>
               <div className="flex-1">
                 <h3 className="font-medium text-foreground mb-2">What you said:</h3>
-                <p className="text-foreground/80 leading-relaxed">
+                <p 
+                  className="text-foreground/80 leading-relaxed"
+                  aria-live="polite"
+                  aria-label="Live transcript of your speech"
+                >
                   {transcript}
                   {isListening && (
-                    <span className="inline-block w-2 h-5 bg-primary ml-1 animate-pulse" />
+                    <span 
+                      className="inline-block w-2 h-5 bg-primary ml-1 animate-pulse"
+                      aria-label="Still listening"
+                    />
                   )}
                 </p>
               </div>
