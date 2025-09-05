@@ -387,6 +387,19 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
   }, []);
 
+  // Enhanced crisis detection
+  const detectCrisis = useCallback((text: string): boolean => {
+    const crisisKeywords = [
+      'suicide', 'kill myself', 'end it all', 'want to die', 'better off dead',
+      'hurt myself', 'harm myself', 'cut myself', 'overdose', 'pills',
+      'can\'t go on', 'no point', 'hopeless', 'worthless', 'burden',
+      'everyone would be better', 'tired of living', 'escape this pain'
+    ];
+    
+    const lowerText = text.toLowerCase();
+    return crisisKeywords.some(keyword => lowerText.includes(keyword));
+  }, []);
+
   // Generate contextual AI responses with conversation memory
   const generateAIResponse = useCallback(async (text: string) => {
     if (!text.trim()) return;
@@ -395,8 +408,11 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const emotion = analyzeEmotion(text);
       setCurrentEmotion(emotion);
 
-      // Generate contextual response based on emotion, topics, conversation history, and actual words
-      const response = generateContextualResponse(text, emotion, conversationContext);
+      // Check for crisis situations first
+      const isCrisis = detectCrisis(text);
+      
+      // Generate highly contextual response based on actual user words
+      const response = generateContextualResponse(text, emotion, conversationContext, isCrisis);
       
       const aiResp: AIResponse = {
         text: response,
@@ -415,15 +431,48 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } catch (err) {
       setError('Failed to generate AI response');
     }
-  }, [analyzeEmotion, conversationContext]);
+  }, [analyzeEmotion, conversationContext, detectCrisis]);
 
-  // Generate contextual responses with conversation awareness
-  const generateContextualResponse = (text: string, emotion: Emotion, context: string[] = []): string => {
+  // Generate highly contextual responses with conversation awareness
+  const generateContextualResponse = (text: string, emotion: Emotion, context: string[] = [], isCrisis: boolean = false): string => {
     const lowerText = text.toLowerCase().trim();
+    
+    // Crisis intervention - highest priority
+    if (isCrisis) {
+      return `I'm very concerned about what you've shared, and I want you to know that you don't have to face this alone. Please reach out to a crisis helpline immediately: 
+      
+      🇮🇳 India: 91529 87821 (AASRA) or 9152987821
+      🌍 International: 988 (Crisis Lifeline)
+      
+      Your life has value, and there are people who want to help you through this difficult time. Would you be willing to call one of these numbers right now?`;
+    }
+
+    // Extract key phrases and words from user input for contextual responses
+    const extractKeyPhrases = (userText: string): string[] => {
+      const phrases = [];
+      
+      // Extract specific concerns mentioned
+      const concernPatterns = [
+        /my (.*?) is (stressed|anxious|worried|upset|angry|sad|difficult|hard|challenging)/gi,
+        /i (can't|cannot|couldn't) (.*?) because/gi,
+        /i'm (struggling|having trouble|finding it hard) (with|to) (.*)/gi,
+        /my (job|work|boss|family|partner|health|money|situation) (.*)/gi,
+        /(.*?) makes me (feel|angry|sad|anxious|worried|stressed)/gi,
+      ];
+      
+      concernPatterns.forEach(pattern => {
+        const matches = userText.match(pattern);
+        if (matches) phrases.push(...matches);
+      });
+      
+      return phrases;
+    };
+
+    const keyPhrases = extractKeyPhrases(text);
     
     // Check if this is a follow-up response to a previous question
     const lastContext = context[context.length - 1] || '';
-    const isFollowUp = context.length > 1 && ( // Changed from > 0 to > 1
+    const isFollowUp = context.length > 1 && (
       lowerText.includes('because') || 
       lowerText.includes('since') ||
       lowerText.includes('well') ||
@@ -432,7 +481,7 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       lowerText.includes('yeah') ||
       lowerText.includes('yes') ||
       lowerText.includes('no') ||
-      (lowerText.length < 30 && !lowerText.includes('hello') && !lowerText.includes('hi')) // Short responses but not greetings
+      (lowerText.length < 30 && !lowerText.includes('hello') && !lowerText.includes('hi'))
     );
 
     // Direct conversational patterns
@@ -505,23 +554,89 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
     }
 
-    // Handle follow-up responses
+    // Generate direct contextual responses based on specific user words
+    const directResponses = generateDirectContextualResponse(text, lowerText, keyPhrases, emotion);
+    if (directResponses) return directResponses;
+
+    // Handle follow-up responses with more context
     if (isFollowUp && context.length > 0) {
       const followUpResponses = [
-        `I really appreciate you sharing that with me. ${generateEmotionalResponse(text, emotion)}`,
-        `Thank you for opening up about that. ${generateEmotionalResponse(text, emotion)}`,
-        `That gives me a much clearer picture. ${generateEmotionalResponse(text, emotion)}`,
-        `I'm glad you felt comfortable sharing more. ${generateEmotionalResponse(text, emotion)}`
+        `I really appreciate you sharing that with me. ${generateEmotionalResponse(text, emotion, keyPhrases)}`,
+        `Thank you for opening up about that. ${generateEmotionalResponse(text, emotion, keyPhrases)}`,
+        `That gives me a much clearer picture. ${generateEmotionalResponse(text, emotion, keyPhrases)}`,
+        `I'm glad you felt comfortable sharing more. ${generateEmotionalResponse(text, emotion, keyPhrases)}`
       ];
       return followUpResponses[Math.floor(Math.random() * followUpResponses.length)];
     }
 
-    // Generate emotion-based response
-    return generateEmotionalResponse(text, emotion);
+    // Generate enhanced emotion-based response
+    return generateEmotionalResponse(text, emotion, keyPhrases);
   };
 
-  // Generate emotion-specific responses
-  const generateEmotionalResponse = (text: string, emotion: Emotion): string => {
+  // Generate direct contextual responses based on user's actual words
+  const generateDirectContextualResponse = (originalText: string, lowerText: string, keyPhrases: string[], emotion: Emotion): string | null => {
+    
+    // Specific work-related issues
+    if (lowerText.includes('my boss') || lowerText.includes('my manager')) {
+      if (emotion.type === 'anger' || emotion.type === 'stress') {
+        return `It sounds like you're having a really difficult time with your boss/manager. Workplace relationships with authority figures can be particularly challenging because there's often a power imbalance. What specific behaviors or situations with them are affecting you most? Sometimes talking through these dynamics can help us figure out the best way to handle them.`;
+      }
+    }
+    
+    if (lowerText.includes('my job') || lowerText.includes('at work')) {
+      if (lowerText.includes('hate') || lowerText.includes('can\'t stand')) {
+        return `I can hear how much frustration and unhappiness your job is causing you right now. When we spend so much of our time at work, hating it can affect every aspect of our lives. What aspects of your job are making you feel this way? Is it the tasks, the environment, the people, or something else entirely?`;
+      }
+      if (lowerText.includes('stressed') || lowerText.includes('overwhelmed')) {
+        return `Work stress can be incredibly overwhelming, especially when it feels like the demands keep piling up. It sounds like you're carrying a heavy load right now. What specific work pressures are weighing on you most? Sometimes breaking down what's causing stress can help us figure out ways to manage it better.`;
+      }
+    }
+    
+    // Relationship-specific responses
+    if (lowerText.includes('my partner') || lowerText.includes('my boyfriend') || lowerText.includes('my girlfriend') || lowerText.includes('my husband') || lowerText.includes('my wife')) {
+      if (emotion.type === 'sadness') {
+        return `Relationship struggles with someone we love can be some of the most painful experiences we go through. It sounds like you're really hurting right now. What's been happening between you two that's causing you this pain? Sometimes talking through these feelings can help clarify what needs attention in the relationship.`;
+      }
+      if (emotion.type === 'anger') {
+        return `When we're angry with our partner, it often means something important to us has been hurt or violated. Your anger is telling you something significant. What did they do or say that triggered these feelings? Understanding what's underneath the anger can help address the real issue.`;
+      }
+    }
+
+    // Family-related responses
+    if (lowerText.includes('my family') || lowerText.includes('my parents') || lowerText.includes('my mom') || lowerText.includes('my dad')) {
+      return `Family relationships can be some of the most complex because there's so much history and emotion involved. It sounds like something significant is happening with your family that's affecting you deeply. What's been going on that's bringing up these feelings? Family dynamics often have layers that go back years.`;
+    }
+
+    // Health-related responses
+    if (lowerText.includes('my health') || lowerText.includes('doctor') || lowerText.includes('sick') || lowerText.includes('pain')) {
+      return `Health concerns can be incredibly scary and isolating. When our bodies aren't working the way we expect, it can affect everything - our mood, our relationships, our sense of security. What's been going on with your health that's worrying you? Sometimes talking through these fears can help us process them better.`;
+    }
+
+    // Financial stress
+    if (lowerText.includes('money') || lowerText.includes('bills') || lowerText.includes('debt') || lowerText.includes('financial')) {
+      return `Financial stress hits at such a fundamental level because money affects our basic sense of security and stability. It can keep us up at night and make every decision feel stressful. What specific financial pressures are you dealing with right now? Sometimes breaking down the situation can help us see potential solutions or at least feel less overwhelmed.`;
+    }
+
+    // Decision-making struggles
+    if (lowerText.includes('don\'t know what to do') || lowerText.includes('can\'t decide') || lowerText.includes('confused about')) {
+      return `Being stuck in indecision can feel paralyzing, especially when it feels like so much depends on making the 'right' choice. What decision are you trying to make, and what's making it feel so complicated? Sometimes talking through the different options and what you're afraid of can help bring clarity.`;
+    }
+
+    // Sleep issues
+    if (lowerText.includes('can\'t sleep') || lowerText.includes('insomnia') || lowerText.includes('tired') || lowerText.includes('exhausted')) {
+      return `Sleep problems can affect everything - our mood, our ability to cope with stress, our physical health, our relationships. It sounds like you're not getting the rest you need. What's been keeping you up or making it hard to get quality sleep? Is it racing thoughts, physical discomfort, or something else?`;
+    }
+
+    // Loneliness
+    if (lowerText.includes('lonely') || lowerText.includes('alone') || lowerText.includes('isolated') || lowerText.includes('no friends')) {
+      return `Loneliness can be one of the most painful human experiences. Even when we're surrounded by people, we can still feel deeply alone if we don't feel truly seen or understood. What's making you feel most isolated right now? Is it a lack of social connections, or feeling disconnected from the people who are in your life?`;
+    }
+
+    return null; // No specific match found
+  };
+
+  // Generate emotion-specific responses with enhanced context
+  const generateEmotionalResponse = (text: string, emotion: Emotion, keyPhrases: string[] = []): string => {
     
     const lowerText = text.toLowerCase();
     
