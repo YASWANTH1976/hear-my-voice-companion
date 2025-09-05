@@ -18,6 +18,9 @@ import { AccessibilityEnhancements } from "@/components/AccessibilityEnhancement
 import { AIResponse } from "@/components/AIResponse";
 import { ConversationInsights } from "@/components/ConversationInsights";
 import { ResourceCenter } from "@/components/ResourceCenter";
+import { MoodAnalytics } from "@/components/MoodAnalytics";
+import { EmergencySupport } from "@/components/EmergencySupport";
+import { WellnessExercises } from "@/components/WellnessExercises";
 import { Footer } from "@/components/Footer";
 import { AdminPanel } from "@/components/AdminPanel";
 import NotFound from "./NotFound";
@@ -77,6 +80,17 @@ const Index = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <AgeGroupSurvey />
             <SurveyInsights />
+          </div>
+          
+          
+          {/* New Wellness Features */}
+          <div className="space-y-8">
+            <MoodAnalytics />
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <EmergencySupport />
+              <WellnessExercises />
+            </div>
           </div>
           
           {/* Admin Panel (for development/testing) */}
