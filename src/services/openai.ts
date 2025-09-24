@@ -202,6 +202,7 @@ export async function generateAIResponse(
 5. Maintain a warm, non-judgmental, and professional tone
 6. Keep responses conversational, human-like, and personally relevant
 7. Be specific to the user's exact words; avoid generic platitudes
+8. Always end with one short, relevant follow-up question to gently continue the conversation
 
 CRITICAL GUIDELINES:
 - ALWAYS respond in ${targetLanguage} language only
@@ -225,7 +226,8 @@ Respond in JSON format with this structure:
   "intensity": "low|medium|high", 
   "confidence": 0.85,
   "topics": ["topic1", "topic2"],
-  "language": "${selectedLanguage}"
+  "language": "${selectedLanguage}",
+  "follow_up": "One short, relevant question in ${targetLanguage}"
 }`;
 
     // Quick-intent path for immediate, human-like replies to short utterances
@@ -252,13 +254,24 @@ Respond in JSON format with this structure:
         { role: "system", content: systemPrompt },
         { role: "user", content: `${userInput}${historyContext}` }
       ],
-      response_format: { type: "json_object" }
+      response_format: { type: "json_object" },
+      temperature: 0.8,
+      presence_penalty: 0.2,
+      frequency_penalty: 0.2
     });
 
     const result = JSON.parse(response.choices[0].message.content || '{}');
-    
+
+    const combinedResponse = (() => {
+      const base = (result.response || "I'm here to listen and support you.").trim();
+      const follow = (result.follow_up || '').trim();
+      if (!follow) return base;
+      // Join with a space for natural flow
+      return `${base} ${follow}`.trim();
+    })();
+
     return {
-      response: result.response || "I'm here to listen and support you.",
+      response: combinedResponse,
       emotion: {
         emotion: result.emotion || 'confusion',
         intensity: result.intensity || 'medium',
@@ -282,8 +295,11 @@ Respond in JSON format with this structure:
       'default': 'I\'m here to listen and support you. Please try again.'
     };
 
+    const base = fallbackResponses[selectedLanguage] || fallbackResponses.default;
+    const localized = await translateText(base, selectedLanguage);
+
     return {
-      response: fallbackResponses[selectedLanguage] || fallbackResponses.default,
+      response: localized,
       emotion: {
         emotion: 'confusion',
         intensity: 'low',
