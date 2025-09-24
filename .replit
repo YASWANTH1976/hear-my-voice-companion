@@ -1,6 +1,7 @@
 modules = ["nodejs-20", "web"]
 [agent]
 expertMode = true
+integrations = ["javascript_openai:1.0.0"]
 
 [nix]
 channel = "stable-25_05"
@@ -39,5 +40,5 @@ localPort = 5000
 externalPort = 80
 
 [[ports]]
-localPort = 37007
+localPort = 34617
 externalPort = 3000

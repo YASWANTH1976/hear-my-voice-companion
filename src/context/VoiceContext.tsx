@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useRef, useCallback } from 'react';
+import { generateAIResponse as callAIService, detectLanguage } from '@/services/openai';
 
 // TypeScript declarations for Speech Recognition API
 interface SpeechRecognition extends EventTarget {
@@ -400,22 +401,54 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return crisisKeywords.some(keyword => lowerText.includes(keyword));
   }, []);
 
-  // Generate contextual AI responses with conversation memory
+  // Speech synthesis with language support
+  const speakResponse = useCallback((text: string) => {
+    if ('speechSynthesis' in window) {
+      speechSynthesis.cancel(); // Stop any current speech
+      
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = selectedLanguage;
+      utterance.rate = 0.9;
+      utterance.pitch = 1;
+      utterance.volume = 0.8;
+      
+      speechSynthesis.speak(utterance);
+    }
+  }, [selectedLanguage]);
+
+  // Generate contextual AI responses with conversation memory using OpenAI
   const generateAIResponse = useCallback(async (text: string) => {
     if (!text.trim()) return;
 
     try {
-      const emotion = analyzeEmotion(text);
+      setError(null);
+      
+      // Auto-detect language if user input is in different language
+      let detectedLang = selectedLanguage;
+      try {
+        detectedLang = await detectLanguage(text);
+        // Only update if detection is confident and different
+        if (detectedLang !== selectedLanguage && detectedLang !== 'en-US') {
+          setSelectedLanguage(detectedLang);
+        }
+      } catch (langErr) {
+        console.warn('Language detection failed, using selected language:', selectedLanguage);
+      }
+
+      // Generate AI response with conversation context
+      const aiResult = await callAIService(text, detectedLang, conversationContext);
+      
+      const emotion: Emotion = {
+        type: aiResult.emotion.emotion,
+        intensity: aiResult.emotion.intensity,
+        confidence: aiResult.emotion.confidence,
+        topics: aiResult.emotion.topics
+      };
+
       setCurrentEmotion(emotion);
 
-      // Check for crisis situations first
-      const isCrisis = detectCrisis(text);
-      
-      // Generate highly contextual response based on actual user words
-      const response = generateContextualResponse(text, emotion, conversationContext, isCrisis);
-      
       const aiResp: AIResponse = {
-        text: response,
+        text: aiResult.response,
         emotion,
         timestamp: new Date()
       };
@@ -426,12 +459,33 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       // Add to conversation context AFTER generating response
       setConversationContext(prev => [...prev.slice(-4), text]); // Keep last 5 exchanges
 
-      // Speak the response
-      speakResponse(response);
+      // Speak the response in the correct language
+      speakResponse(aiResult.response);
     } catch (err) {
-      setError('Failed to generate AI response');
+      console.error('AI Response Error:', err);
+      
+      // Fallback to local response if AI fails
+      try {
+        const emotion = analyzeEmotion(text);
+        setCurrentEmotion(emotion);
+        
+        const fallbackResponse = generateContextualResponse(text, emotion, conversationContext, detectCrisis(text));
+        
+        const aiResp: AIResponse = {
+          text: fallbackResponse,
+          emotion,
+          timestamp: new Date()
+        };
+
+        setAiResponse(aiResp);
+        setResponseHistory(prev => [aiResp, ...prev.slice(0, 9)]);
+        setConversationContext(prev => [...prev.slice(-4), text]);
+        speakResponse(fallbackResponse);
+      } catch (fallbackErr) {
+        setError('Unable to generate response. Please try again.');
+      }
     }
-  }, [analyzeEmotion, conversationContext, detectCrisis]);
+  }, [selectedLanguage, conversationContext, analyzeEmotion, detectCrisis, speakResponse]);
 
   // Generate highly contextual responses with conversation awareness
   const generateContextualResponse = (text: string, emotion: Emotion, context: string[] = [], isCrisis: boolean = false): string => {
@@ -772,21 +826,6 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     return response;
   };
-
-  // Speech synthesis with language support
-  const speakResponse = useCallback((text: string) => {
-    if ('speechSynthesis' in window) {
-      speechSynthesis.cancel(); // Stop any current speech
-      
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = selectedLanguage;
-      utterance.rate = 0.9;
-      utterance.pitch = 1;
-      utterance.volume = 0.8;
-      
-      speechSynthesis.speak(utterance);
-    }
-  }, [selectedLanguage]);
 
   // Audio level monitoring
   const monitorAudioLevel = useCallback(() => {
