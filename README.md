@@ -56,6 +56,11 @@ Support for 10+ languages with native script display:
 - Speech synthesis of AI responses in user's selected language
 - Intelligent follow-up questions and responses
 
+#### New in this release
+- Intent-aware quick replies (hi/hello, thanks, goodbye, how-are-you) with localized responses
+- Script-aware language detection for instant recognition without network, with LLM fallback
+- Translation fallback for quick replies to support many languages beyond built-ins
+
 ### 🧘 Interactive Wellness Strategies & Tools
 - **Guided Breathing Exercises**: 4-7-8 breathing technique with voice guidance
 - **5-Minute Guided Meditation**: Complete meditation session with voice instructions
