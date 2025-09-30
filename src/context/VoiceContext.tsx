@@ -148,7 +148,7 @@ export const useVoice = () => {
 
 export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // State management
-  const [selectedLanguage, setSelectedLanguage] = useState('hi-IN');
+  const [selectedLanguage, setSelectedLanguage] = useState('en-IN');
   const [isRecording, setIsRecording] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
@@ -427,8 +427,8 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       let detectedLang = selectedLanguage;
       try {
         detectedLang = await detectLanguage(text);
-        // Only update if detection is confident and different
-        if (detectedLang !== selectedLanguage && detectedLang !== 'en-US') {
+        // Only update if detection is different
+        if (detectedLang !== selectedLanguage) {
           setSelectedLanguage(detectedLang);
         }
       } catch (langErr) {
