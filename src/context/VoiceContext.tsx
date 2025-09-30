@@ -180,212 +180,25 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     clearError();
   }, [clearError]);
 
-  // Advanced emotion analysis with comprehensive word detection
-  const analyzeEmotion = useCallback((text: string): Emotion => {
-    const lowerText = text.toLowerCase().trim();
+  // Voice characteristics analysis interface
+  interface VoiceCharacteristics {
+    pace: 'slow' | 'normal' | 'fast';
+    volume: 'low' | 'normal' | 'high';
+    pauseFrequency: 'few' | 'normal' | 'many';
+  }
+
+  // Analyze voice characteristics from audio
+  const analyzeVoiceCharacteristics = useCallback((audioLevel: number, transcriptLength: number): VoiceCharacteristics => {
+    // Estimate pace based on transcript length and audio duration
+    const pace = transcriptLength > 50 ? 'fast' : transcriptLength < 20 ? 'slow' : 'normal';
     
-    // Enhanced emotion patterns with comprehensive word detection
-    const emotionPatterns = {
-      happiness: {
-        keywords: [
-          // Basic positive words
-          'happy', 'joy', 'joyful', 'excited', 'great', 'wonderful', 'amazing', 'fantastic', 'awesome', 'brilliant',
-          'good', 'fine', 'okay', 'well', 'excellent', 'perfect', 'beautiful', 'lovely', 'nice', 'pleasant',
-          'cheerful', 'delighted', 'thrilled', 'elated', 'euphoric', 'ecstatic', 'overjoyed', 'blissful',
-          'content', 'satisfied', 'pleased', 'glad', 'grateful', 'thankful', 'blessed', 'lucky', 'fortunate',
-          'positive', 'optimistic', 'hopeful', 'confident', 'energetic', 'vibrant', 'lively', 'upbeat',
-          // Success/achievement
-          'success', 'win', 'won', 'achieve', 'accomplished', 'proud', 'celebration', 'celebrate',
-          'victory', 'triumph', 'milestone', 'breakthrough', 'progress', 'improvement', 'better'
-        ],
-        phrases: [
-          'feeling good', 'doing well', 'going great', 'so happy', 'really good', 'much better',
-          'love it', 'love this', 'best day', 'feeling amazing', 'on top of the world'
-        ],
-        intensity: { 
-          high: ['ecstatic', 'overjoyed', 'thrilled', 'euphoric', 'amazing', 'fantastic', 'brilliant'], 
-          medium: ['happy', 'excited', 'great', 'wonderful', 'delighted'], 
-          low: ['good', 'fine', 'okay', 'pleasant', 'nice'] 
-        }
-      },
-      sadness: {
-        keywords: [
-          // Basic sad words
-          'sad', 'depressed', 'down', 'low', 'blue', 'unhappy', 'miserable', 'upset', 'hurt', 'pain', 'ache',
-          'crying', 'tears', 'weep', 'sob', 'grief', 'sorrow', 'mourning', 'heartbroken', 'devastated',
-          'lonely', 'alone', 'isolated', 'empty', 'hollow', 'broken', 'shattered', 'crushed', 'destroyed',
-          'hopeless', 'helpless', 'worthless', 'useless', 'failure', 'lost', 'defeated', 'disappointed',
-          'regret', 'remorse', 'guilt', 'shame', 'despair', 'melancholy', 'gloomy', 'dark', 'heavy',
-          // Negative states
-          'terrible', 'awful', 'horrible', 'bad', 'worse', 'worst', 'sick', 'ill', 'unwell'
-        ],
-        phrases: [
-          'not good', 'not well', 'not okay', 'not fine', 'not great', 'not happy', 'not doing well',
-          'feeling bad', 'feeling down', 'feeling low', 'feeling sad', 'could be better', 'having a hard time',
-          'going through', 'struggling with', 'dealing with', 'can\'t handle', 'too much', 'give up'
-        ],
-        intensity: { 
-          high: ['devastated', 'heartbroken', 'crushed', 'destroyed', 'hopeless', 'despair'], 
-          medium: ['sad', 'depressed', 'upset', 'hurt', 'lonely'], 
-          low: ['down', 'blue', 'disappointed', 'not good'] 
-        }
-      },
-      anxiety: {
-        keywords: [
-          'anxious', 'worried', 'nervous', 'panic', 'afraid', 'fear', 'scared', 'terrified', 'frightened',
-          'tense', 'uneasy', 'restless', 'jittery', 'edgy', 'stressed', 'overwhelmed', 'pressure',
-          'concern', 'concerned', 'trouble', 'troubled', 'disturbed', 'unsettled', 'agitated',
-          'paranoid', 'suspicious', 'insecure', 'uncertain', 'doubt', 'doubtful', 'questioning'
-        ],
-        phrases: [
-          'freaking out', 'losing it', 'can\'t breathe', 'heart racing', 'sweating', 'shaking',
-          'what if', 'worried about', 'scared of', 'afraid of', 'nervous about'
-        ],
-        intensity: { 
-          high: ['panic', 'terrified', 'freaking out', 'losing it'], 
-          medium: ['anxious', 'worried', 'nervous', 'scared'], 
-          low: ['concerned', 'uneasy', 'uncertain'] 
-        }
-      },
-      anger: {
-        keywords: [
-          'angry', 'mad', 'furious', 'rage', 'hate', 'frustrated', 'irritated', 'annoyed', 'pissed',
-          'outraged', 'livid', 'fuming', 'enraged', 'irate', 'aggravated', 'exasperated', 'fed up',
-          'disgusted', 'revolted', 'appalled', 'offended', 'insulted', 'betrayed', 'cheated',
-          'unfair', 'unjust', 'wrong', 'stupid', 'ridiculous', 'absurd', 'crazy', 'insane'
-        ],
-        phrases: [
-          'pissed off', 'fed up', 'had enough', 'sick of', 'tired of', 'can\'t stand', 'drives me crazy',
-          'makes me mad', 'so angry', 'really mad', 'absolutely furious'
-        ],
-        intensity: { 
-          high: ['furious', 'rage', 'livid', 'enraged', 'absolutely furious'], 
-          medium: ['angry', 'mad', 'frustrated', 'pissed'], 
-          low: ['annoyed', 'irritated', 'fed up'] 
-        }
-      },
-      stress: {
-        keywords: [
-          'stressed', 'stress', 'overwhelmed', 'pressure', 'burden', 'exhausted', 'tired', 'drained',
-          'overworked', 'swamped', 'buried', 'drowning', 'suffocating', 'breaking', 'snapping',
-          'deadline', 'rush', 'hurry', 'urgent', 'crisis', 'emergency', 'chaos', 'mess',
-          'juggling', 'balancing', 'managing', 'handling', 'coping', 'struggling'
-        ],
-        phrases: [
-          'too much', 'can\'t handle', 'breaking point', 'about to snap', 'losing control',
-          'so much pressure', 'under stress', 'stressed out', 'burned out', 'worn out'
-        ],
-        intensity: { 
-          high: ['overwhelmed', 'breaking', 'drowning', 'about to snap'], 
-          medium: ['stressed', 'pressure', 'exhausted', 'swamped'], 
-          low: ['tired', 'busy', 'juggling'] 
-        }
-      },
-      confusion: {
-        keywords: [
-          'confused', 'lost', 'unclear', 'uncertain', 'puzzled', 'bewildered', 'perplexed', 'baffled',
-          'don\'t understand', 'don\'t know', 'unsure', 'indecisive', 'torn', 'conflicted',
-          'mixed up', 'muddled', 'foggy', 'blank', 'stuck', 'blocked', 'stumped'
-        ],
-        phrases: [
-          'don\'t know what', 'not sure', 'can\'t decide', 'don\'t understand', 'makes no sense',
-          'so confused', 'totally lost', 'have no idea', 'what should i', 'what do you think'
-        ],
-        intensity: { 
-          high: ['bewildered', 'totally lost', 'have no idea'], 
-          medium: ['confused', 'uncertain', 'puzzled'], 
-          low: ['unsure', 'unclear', 'not sure'] 
-        }
-      }
-    };
-
-    // Check for negation patterns that flip emotions
-    const negationWords = ['not', 'don\'t', 'doesn\'t', 'can\'t', 'won\'t', 'isn\'t', 'aren\'t', 'wasn\'t', 'weren\'t', 'haven\'t', 'hasn\'t', 'hadn\'t', 'couldn\'t', 'wouldn\'t', 'shouldn\'t', 'mustn\'t', 'no', 'never', 'nothing', 'nobody', 'none'];
+    // Volume based on audio level
+    const volume = audioLevel > 0.7 ? 'high' : audioLevel < 0.3 ? 'low' : 'normal';
     
-    // Check for explicit negative phrases first
-    const negativeStates = [
-      'not good', 'not well', 'not okay', 'not fine', 'not great', 'not happy', 'not doing well',
-      'feeling bad', 'feeling down', 'feeling terrible', 'could be better', 'having a hard time',
-      'not so good', 'not really', 'not particularly', 'struggling', 'going through'
-    ];
-
-    const hasNegativeState = negativeStates.some(phrase => lowerText.includes(phrase));
-    if (hasNegativeState) {
-      return { type: 'sadness', intensity: 'medium', confidence: 0.85, topics: [] };
-    }
-
-    // Detect topics
-    const topicPatterns = {
-      work: ['work', 'job', 'career', 'boss', 'colleague', 'office', 'project', 'deadline', 'meeting', 'presentation', 'salary', 'promotion', 'company', 'business', 'professional', 'workplace', 'employee', 'manager'],
-      relationship: ['relationship', 'partner', 'boyfriend', 'girlfriend', 'husband', 'wife', 'marriage', 'family', 'friend', 'love', 'dating', 'romance', 'breakup', 'divorce', 'parents', 'children', 'kids'],
-      health: ['health', 'sick', 'illness', 'doctor', 'hospital', 'pain', 'medical', 'medicine', 'treatment', 'disease', 'injury', 'physical', 'mental health', 'therapy', 'counseling'],
-      financial: ['money', 'financial', 'bills', 'debt', 'expensive', 'cost', 'budget', 'income', 'salary', 'poor', 'rich', 'bank', 'loan', 'mortgage', 'rent', 'payment'],
-      academic: ['study', 'exam', 'school', 'college', 'university', 'grade', 'education', 'student', 'teacher', 'class', 'homework', 'assignment', 'test', 'degree', 'learning'],
-      future: ['future', 'tomorrow', 'next', 'plan', 'goal', 'dream', 'hope', 'wish', 'want', 'will', 'going to', 'expecting', 'anticipating']
-    };
-
-    let detectedEmotion: keyof typeof emotionPatterns = 'happiness';
-    let maxScore = 0;
-    let intensity: 'low' | 'medium' | 'high' = 'low';
-    let confidence = 0;
-    let topics: string[] = [];
-
-    // Score each emotion
-    Object.entries(emotionPatterns).forEach(([emotion, patterns]) => {
-      let score = 0;
-      
-      // Check keywords (higher weight)
-      patterns.keywords.forEach(keyword => {
-        if (lowerText.includes(keyword)) {
-          score += 3;
-          
-          // Determine intensity
-          if (patterns.intensity.high.includes(keyword)) intensity = 'high';
-          else if (patterns.intensity.medium.includes(keyword)) intensity = 'medium';
-          else intensity = 'low';
-        }
-      });
-      
-      // Check phrases (highest weight)
-      if (patterns.phrases) {
-        patterns.phrases.forEach(phrase => {
-          if (lowerText.includes(phrase)) {
-            score += 4;
-            intensity = 'medium';
-          }
-        });
-      }
-      
-      if (score > maxScore) {
-        maxScore = score;
-        detectedEmotion = emotion as keyof typeof emotionPatterns;
-        confidence = Math.min(score / 8, 1);
-      }
-    });
-
-    // Detect topics mentioned
-    Object.entries(topicPatterns).forEach(([topic, keywords]) => {
-      if (keywords.some(keyword => lowerText.includes(keyword))) {
-        topics.push(topic);
-      }
-    });
-
-    // If no strong emotion detected but we have words, default to neutral happiness
-    if (maxScore === 0 && lowerText.length > 0) {
-      return {
-        type: 'happiness',
-        intensity: 'low',
-        confidence: 0.3,
-        topics
-      };
-    }
-
-    return {
-      type: detectedEmotion,
-      intensity,
-      confidence,
-      topics
-    };
+    // Default pause frequency (could be enhanced with more sophisticated audio analysis)
+    const pauseFrequency = 'normal';
+    
+    return { pace, volume, pauseFrequency };
   }, []);
 
   // Enhanced crisis detection
@@ -423,6 +236,9 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     try {
       setError(null);
       
+      // Analyze voice characteristics
+      const voiceChars = analyzeVoiceCharacteristics(audioLevel, text.length);
+      
       // Auto-detect language if user input is in different language
       let detectedLang = selectedLanguage;
       try {
@@ -435,8 +251,8 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         console.warn('Language detection failed, using selected language:', selectedLanguage);
       }
 
-      // Generate AI response with conversation context
-      const aiResult = await callAIService(text, detectedLang, conversationContext);
+      // Generate AI response with conversation context and voice characteristics
+      const aiResult = await callAIService(text, detectedLang, conversationContext, voiceChars);
       
       const emotion: Emotion = {
         type: aiResult.emotion.emotion,
@@ -463,29 +279,9 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       speakResponse(aiResult.response);
     } catch (err) {
       console.error('AI Response Error:', err);
-      
-      // Fallback to local response if AI fails
-      try {
-        const emotion = analyzeEmotion(text);
-        setCurrentEmotion(emotion);
-        
-        const fallbackResponse = generateContextualResponse(text, emotion, conversationContext, detectCrisis(text));
-        
-        const aiResp: AIResponse = {
-          text: fallbackResponse,
-          emotion,
-          timestamp: new Date()
-        };
-
-        setAiResponse(aiResp);
-        setResponseHistory(prev => [aiResp, ...prev.slice(0, 9)]);
-        setConversationContext(prev => [...prev.slice(-4), text]);
-        speakResponse(fallbackResponse);
-      } catch (fallbackErr) {
-        setError('Unable to generate response. Please try again.');
-      }
+      setError('Unable to generate AI response. Please check your OpenAI API key configuration.');
     }
-  }, [selectedLanguage, conversationContext, analyzeEmotion, detectCrisis, speakResponse]);
+  }, [selectedLanguage, conversationContext, analyzeVoiceCharacteristics, audioLevel, speakResponse]);
 
   // Generate highly contextual responses with conversation awareness
   const generateContextualResponse = (text: string, emotion: Emotion, context: string[] = [], isCrisis: boolean = false): string => {
