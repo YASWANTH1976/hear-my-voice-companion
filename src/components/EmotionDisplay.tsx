@@ -54,6 +54,14 @@ export const EmotionDisplay: React.FC = () => {
     return null;
   }
 
+  // Convert numeric intensity (0-1) to categorical intensity level
+  const getIntensityLevel = (intensity: number): 'low' | 'medium' | 'high' => {
+    if (intensity < 0.33) return 'low';
+    if (intensity < 0.67) return 'medium';
+    return 'high';
+  };
+
+  const intensityLevel = getIntensityLevel(currentEmotion.intensity);
   const EmotionIcon = emotionIcons[currentEmotion.type];
   const emotionColor = emotionColors[currentEmotion.type];
   const confidencePercentage = Math.round(currentEmotion.confidence * 100);
@@ -86,12 +94,12 @@ export const EmotionDisplay: React.FC = () => {
                 <Badge 
                   variant="secondary"
                   className={`
-                    ${currentEmotion.intensity === 'high' ? 'bg-red-100 text-red-800' : ''}
-                    ${currentEmotion.intensity === 'medium' ? 'bg-yellow-100 text-yellow-800' : ''}
-                    ${currentEmotion.intensity === 'low' ? 'bg-green-100 text-green-800' : ''}
+                    ${intensityLevel === 'high' ? 'bg-red-100 text-red-800' : ''}
+                    ${intensityLevel === 'medium' ? 'bg-yellow-100 text-yellow-800' : ''}
+                    ${intensityLevel === 'low' ? 'bg-green-100 text-green-800' : ''}
                   `}
                 >
-                  {intensityLabels[currentEmotion.intensity]}
+                  {intensityLabels[intensityLevel]}
                 </Badge>
               </div>
               
@@ -143,17 +151,17 @@ export const EmotionDisplay: React.FC = () => {
                   key={level}
                   className={`
                     flex-1 h-3 rounded-full transition-all duration-300
-                    ${currentEmotion.intensity === level 
+                    ${intensityLevel === level 
                       ? `bg-${emotionColor}` 
                       : 'bg-muted'
                     }
-                    ${currentEmotion.intensity === level && level === 'high' 
+                    ${intensityLevel === level && level === 'high' 
                       ? 'animate-pulse-gentle' 
                       : ''
                     }
                   `}
                   style={{
-                    backgroundColor: currentEmotion.intensity === level 
+                    backgroundColor: intensityLevel === level 
                       ? `hsl(var(--emotion-${currentEmotion.type}))` 
                       : undefined
                   }}
@@ -172,9 +180,9 @@ export const EmotionDisplay: React.FC = () => {
           <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
             <p className="text-sm text-foreground/80 leading-relaxed">
               I can sense <strong>{emotionLabels[currentEmotion.type].toLowerCase()}</strong> 
-              {currentEmotion.intensity === 'high' && ' quite strongly'} 
-              {currentEmotion.intensity === 'medium' && ' moderately'} 
-              {currentEmotion.intensity === 'low' && ' mildly'} 
+              {intensityLevel === 'high' && ' quite strongly'} 
+              {intensityLevel === 'medium' && ' moderately'} 
+              {intensityLevel === 'low' && ' mildly'} 
               in what you've shared.
               {currentEmotion.topics.length > 0 && (
                 <> It seems to be related to {currentEmotion.topics.join(', ')}</>
