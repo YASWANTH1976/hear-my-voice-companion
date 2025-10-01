@@ -1,19 +1,22 @@
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
-serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, {
+      status: 200,
+      headers: corsHeaders,
+    });
   }
 
   try {
     const { text, language, conversationHistory } = await req.json();
-    
+
     if (!text) {
       throw new Error('No text provided');
     }
@@ -25,44 +28,41 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY not configured');
     }
 
-    const systemPrompt = `You are a compassionate mental health companion named HearMeOut. Your role is to:
+    const historyContext = conversationHistory && conversationHistory.length > 0
+      ? `\n\nConversation history:\n${conversationHistory.slice(-5).join('\n')}`
+      : '';
 
-1. Listen actively and empathetically to users' feelings and concerns
-2. Provide emotional support and validation
-3. Offer gentle guidance and coping strategies when appropriate
-4. Detect emotional states and respond with appropriate empathy
-5. Maintain a warm, supportive, and non-judgmental tone
-6. Encourage users to seek professional help when needed
+    const systemPrompt = `You are an empathetic mental health companion. Always respond directly to what the user says, in natural spoken-friendly sentences. Keep replies short, supportive, and conversational.
 
-CRITICAL CRISIS DETECTION:
-If the user expresses:
-- Suicidal thoughts or self-harm intentions
-- Immediate danger to themselves or others
-- Severe mental health crisis
+CORE PRINCIPLES:
+1. Respond DIRECTLY to the user's exact words and feelings
+2. Use natural, conversational language (like speaking to a friend)
+3. Keep responses SHORT (1-3 sentences maximum)
+4. Be warm, supportive, and non-judgmental
+5. Mirror the user's language style
+6. Always respond in ${language} language
 
-You MUST:
-1. Express immediate concern and care
-2. Encourage them to contact emergency services or crisis hotlines
-3. Provide crisis resources appropriate to their region
+RESPONSE STYLE:
+✓ Natural and conversational ("I hear you", "That sounds really tough")
+✓ Validating and empathetic ("It makes sense you'd feel that way")
+✓ Short and focused (1-3 sentences)
+✓ Direct acknowledgment of what they said
+✗ NO clinical language or jargon
+✗ NO long paragraphs or lists
+✗ NO generic platitudes
+✗ NO robotic responses
 
-Response Guidelines:
-- Keep responses conversational and natural (2-4 sentences typically)
-- Use ${language} language
-- Show empathy and understanding
-- Ask clarifying questions when helpful
-- Provide actionable suggestions when appropriate
-- Never diagnose or provide medical advice
-- Encourage professional help for serious concerns
+EMOTION DETECTION:
+Detect the primary emotion: anxiety, sadness, anger, stress, happiness, confusion
+Assess intensity: low, medium, high
+Calculate confidence: 0-1
+Identify topics: work, relationships, health, financial, academic, family
 
-Emotion Analysis:
-Analyze the user's emotional state and include it in your response JSON with:
-- emotion: primary emotion (happy, sad, anxious, angry, neutral, etc.)
-- intensity: 0-1 scale
-- confidence: 0-1 scale  
-- topics: array of relevant topics mentioned
-
-Previous conversation context:
-${conversationHistory ? conversationHistory.join('\n') : 'This is the start of the conversation.'}`;
+CRISIS DETECTION:
+If detecting self-harm, suicide ideation, or immediate danger:
+- Respond with immediate care and concern
+- Provide crisis hotline: India 91529-87821 (AASRA), International 988
+- Strongly encourage immediate professional help${historyContext}`;
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -142,7 +142,12 @@ ${conversationHistory ? conversationHistory.join('\n') : 'This is the start of t
         },
         language: language
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      {
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        }
+      }
     );
 
   } catch (error) {

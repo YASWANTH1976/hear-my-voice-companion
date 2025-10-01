@@ -95,6 +95,7 @@ export interface AIResponse {
   emotion: Emotion;
   timestamp: Date;
   audioBlob?: Blob;
+  userTranscript?: string;
 }
 
 // Context interface
@@ -113,7 +114,7 @@ interface VoiceContextType {
   stopRecording: () => void;
   clearTranscript: () => void;
   generateAIResponse: (transcript: string) => Promise<void>;
-  speakResponse: (text: string) => void;
+  speakResponse: (text: string, autoPlay?: boolean) => Promise<Blob | null>;
   currentStrategy: string | null;
   setCurrentStrategy: (strategy: string | null) => void;
   error: string | null;
@@ -140,6 +141,7 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [aiResponse, setAiResponse] = useState<AIResponse | null>(null);
   const [responseHistory, setResponseHistory] = useState<AIResponse[]>([]);
   const [conversationContext, setConversationContext] = useState<string[]>([]);
+  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const [currentStrategy, setCurrentStrategy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -159,6 +161,7 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setAiResponse(null);
     setResponseHistory([]);
     setConversationContext([]);
+    setCurrentConversationId(null);
     clearError();
   }, [clearError]);
 
@@ -286,6 +289,25 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setError(null);
       console.log('Generating AI response for:', text);
 
+      let conversationId = currentConversationId;
+      if (!conversationId) {
+        const { data: newConv, error: convError } = await supabase
+          .from('conversations')
+          .insert({ language: selectedLanguage })
+          .select()
+          .single();
+
+        if (convError) throw convError;
+        conversationId = newConv.id;
+        setCurrentConversationId(conversationId);
+      }
+
+      await supabase.from('messages').insert({
+        conversation_id: conversationId,
+        role: 'user',
+        content: text.trim()
+      });
+
       const { data, error: functionError } = await supabase.functions.invoke('generate-response', {
         body: {
           text: text.trim(),
@@ -311,24 +333,39 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       setCurrentEmotion(emotion);
 
+      await supabase.from('messages').insert({
+        conversation_id: conversationId,
+        role: 'assistant',
+        content: data.text,
+        emotion_type: emotion.type,
+        emotion_intensity: emotion.intensity,
+        emotion_confidence: emotion.confidence,
+        topics: emotion.topics
+      });
+
       const aiResp: AIResponse = {
         text: data.text,
         emotion,
-        timestamp: new Date()
+        timestamp: new Date(),
+        userTranscript: text.trim()
       };
 
       setAiResponse(aiResp);
       setResponseHistory(prev => [aiResp, ...prev.slice(0, 9)]);
-      setConversationContext(prev => [...prev.slice(-4), text]);
+      setConversationContext(prev => [
+        ...prev.slice(-4),
+        `User: ${text}`,
+        `Assistant: ${data.text}`
+      ]);
 
       speakResponse(data.text);
     } catch (err) {
       console.error('AI Response Error:', err);
       setError(err instanceof Error ? err.message : 'Unable to generate AI response');
     }
-  }, [selectedLanguage, conversationContext]);
+  }, [selectedLanguage, conversationContext, currentConversationId, speakResponse]);
 
-  const speakResponse = useCallback(async (text: string) => {
+  const speakResponse = useCallback(async (text: string, autoPlay: boolean = true) => {
     try {
       console.log('Generating speech for:', text);
 
@@ -356,13 +393,17 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const audioBlob = new Blob([bytes], { type: 'audio/mp3' });
       const audioUrl = URL.createObjectURL(audioBlob);
       const audio = new Audio(audioUrl);
-      
+
       audio.onended = () => URL.revokeObjectURL(audioUrl);
-      await audio.play();
+
+      if (autoPlay) {
+        await audio.play();
+      }
+
+      return audioBlob;
     } catch (err) {
       console.error('Text-to-speech error:', err);
-      // Fallback to browser TTS
-      if ('speechSynthesis' in window) {
+      if (autoPlay && 'speechSynthesis' in window) {
         speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = selectedLanguage;
@@ -371,6 +412,7 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         utterance.volume = 0.8;
         speechSynthesis.speak(utterance);
       }
+      return null;
     }
   }, [selectedLanguage]);
 

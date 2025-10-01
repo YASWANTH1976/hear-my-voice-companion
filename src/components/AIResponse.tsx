@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Volume2, Copy, MessageCircle, Clock, VolumeX } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Volume2, Copy, MessageCircle, Clock, VolumeX, User } from 'lucide-react';
 import { useVoice } from '@/context/VoiceContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ export const AIResponse: React.FC = () => {
   const { aiResponse, speakResponse } = useVoice();
   const { toast } = useToast();
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   if (!aiResponse) {
     return null;
@@ -30,21 +31,38 @@ export const AIResponse: React.FC = () => {
     }
   };
 
-  const handleSpeakResponse = () => {
+  const handleSpeakResponse = async () => {
     if (isSpeaking) {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
       speechSynthesis.cancel();
       setIsSpeaking(false);
     } else {
       setIsSpeaking(true);
-      const utterance = new SpeechSynthesisUtterance(aiResponse.text);
-      utterance.rate = 0.9;
-      utterance.pitch = 1;
-      utterance.volume = 0.8;
-      
-      utterance.onend = () => setIsSpeaking(false);
-      utterance.onerror = () => setIsSpeaking(false);
-      
-      speechSynthesis.speak(utterance);
+      try {
+        const audioBlob = await speakResponse(aiResponse.text, false);
+        if (audioBlob) {
+          const audioUrl = URL.createObjectURL(audioBlob);
+          const audio = new Audio(audioUrl);
+          audioRef.current = audio;
+
+          audio.onended = () => {
+            setIsSpeaking(false);
+            URL.revokeObjectURL(audioUrl);
+          };
+          audio.onerror = () => {
+            setIsSpeaking(false);
+            URL.revokeObjectURL(audioUrl);
+          };
+
+          await audio.play();
+        }
+      } catch (err) {
+        console.error('Error playing audio:', err);
+        setIsSpeaking(false);
+      }
     }
   };
 
@@ -57,8 +75,26 @@ export const AIResponse: React.FC = () => {
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto">
-      <Card className="card-hover border-primary/20 bg-gradient-to-br from-primary/5 to-purple-50/50">
+    <div className="w-full max-w-2xl mx-auto space-y-4">
+      {aiResponse.userTranscript && (
+        <Card className="card-hover border-blue-200 bg-blue-50/50">
+          <CardContent className="pt-6">
+            <div className="flex items-start space-x-3">
+              <div className="bg-blue-500 p-2 rounded-lg">
+                <User className="h-4 w-4 text-white" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-medium text-foreground mb-2">You said:</h3>
+                <p className="text-foreground/80 leading-relaxed">
+                  {aiResponse.userTranscript}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <Card className="card-hover border-primary/20 bg-gradient-to-br from-primary/5 to-background">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
@@ -67,25 +103,23 @@ export const AIResponse: React.FC = () => {
               </div>
               <span className="text-lg">AI Response</span>
             </div>
-            
+
             <div className="flex items-center space-x-1 text-xs text-muted-foreground">
               <Clock className="h-3 w-3" />
               <span>{formatTime(aiResponse.timestamp)}</span>
             </div>
           </CardTitle>
         </CardHeader>
-        
+
         <CardContent className="space-y-4">
-          {/* AI Response Text */}
           <div className="p-4 bg-white/80 rounded-lg border border-primary/10">
             <p className="text-foreground leading-relaxed text-base">
               {aiResponse.text}
             </p>
           </div>
 
-          {/* Emotion Context */}
           <div className="flex items-center space-x-2 p-3 bg-muted/30 rounded-lg">
-            <div 
+            <div
               className="w-3 h-3 rounded-full animate-pulse-gentle"
               style={{ backgroundColor: `hsl(var(--emotion-${aiResponse.emotion.type}))` }}
             />
@@ -97,7 +131,6 @@ export const AIResponse: React.FC = () => {
             </span>
           </div>
 
-          {/* Action Buttons */}
           <div className="flex items-center justify-between pt-2">
             <div className="flex items-center space-x-2">
               <Button
@@ -118,7 +151,7 @@ export const AIResponse: React.FC = () => {
                   </>
                 )}
               </Button>
-              
+
               <Button
                 variant="outline"
                 size="sm"
@@ -130,7 +163,6 @@ export const AIResponse: React.FC = () => {
               </Button>
             </div>
 
-            {/* Response Quality Indicators */}
             <div className="flex items-center space-x-2">
               <div className="flex items-center space-x-1">
                 <div className="w-2 h-2 rounded-full bg-green-500"></div>
@@ -145,10 +177,9 @@ export const AIResponse: React.FC = () => {
             </div>
           </div>
 
-          {/* Supportive Message */}
-          <div className="p-3 bg-gradient-to-r from-primary/10 to-purple-100/50 rounded-lg border border-primary/20">
+          <div className="p-3 bg-gradient-to-r from-primary/10 to-background rounded-lg border border-primary/20">
             <p className="text-sm text-primary font-medium">
-              💙 Remember: This is a supportive conversation, not medical advice. 
+              Remember: This is a supportive conversation, not medical advice.
               For professional help, please consult a qualified mental health professional.
             </p>
           </div>
