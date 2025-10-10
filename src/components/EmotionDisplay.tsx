@@ -20,7 +20,11 @@ const emotionIcons = {
   anger: Flame,
   stress: Zap,
   happiness: Sun,
-  confusion: HelpCircle
+  confusion: HelpCircle,
+  fear: AlertTriangle,
+  frustration: Flame,
+  loneliness: Cloud,
+  excitement: Sun
 };
 
 const emotionColors = {
@@ -29,7 +33,11 @@ const emotionColors = {
   anger: 'emotion-anger',
   stress: 'emotion-stress',
   happiness: 'emotion-happiness',
-  confusion: 'emotion-confusion'
+  confusion: 'emotion-confusion',
+  fear: 'emotion-anxiety',
+  frustration: 'emotion-anger',
+  loneliness: 'emotion-sadness',
+  excitement: 'emotion-happiness'
 };
 
 const emotionLabels = {
@@ -38,7 +46,11 @@ const emotionLabels = {
   anger: 'Anger', 
   stress: 'Stress',
   happiness: 'Happiness',
-  confusion: 'Confusion'
+  confusion: 'Confusion',
+  fear: 'Fear',
+  frustration: 'Frustration',
+  loneliness: 'Loneliness',
+  excitement: 'Excitement'
 };
 
 const intensityLabels = {
