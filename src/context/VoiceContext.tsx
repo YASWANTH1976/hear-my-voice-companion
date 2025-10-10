@@ -291,18 +291,19 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       let conversationId = currentConversationId;
       if (!conversationId) {
-        const { data: newConv, error: convError } = await supabase
+        const { data: newConv, error: convError } = await (supabase as any)
           .from('conversations')
           .insert({ language: selectedLanguage })
           .select()
           .single();
 
         if (convError) throw convError;
-        conversationId = newConv.id;
+        if (!newConv) throw new Error('Conversation not created');
+        conversationId = (newConv as any).id;
         setCurrentConversationId(conversationId);
       }
 
-      await supabase.from('messages').insert({
+      await (supabase as any).from('messages').insert({
         conversation_id: conversationId,
         role: 'user',
         content: text.trim()
@@ -333,7 +334,7 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       setCurrentEmotion(emotion);
 
-      await supabase.from('messages').insert({
+      await (supabase as any).from('messages').insert({
         conversation_id: conversationId,
         role: 'assistant',
         content: data.text,
@@ -363,7 +364,7 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       console.error('AI Response Error:', err);
       setError(err instanceof Error ? err.message : 'Unable to generate AI response');
     }
-  }, [selectedLanguage, conversationContext, currentConversationId, speakResponse]);
+  }, [selectedLanguage, conversationContext, currentConversationId]);
 
   const speakResponse = useCallback(async (text: string, autoPlay: boolean = true) => {
     try {
