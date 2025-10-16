@@ -288,17 +288,13 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setError(null);
       console.log('Generating AI response for:', text);
 
-      const baseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-      const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
-      if (!baseUrl || !anonKey) {
-        throw new Error('Backend URL or key missing. Please reload the preview.');
-      }
+      // Call public backend function directly using full Functions URL (no env needed)
+      const functionBaseUrl = 'https://wzkckhauiprbbmfeiyox.functions.supabase.co/functions/v1';
 
-      const resp = await fetch(`${baseUrl}/functions/v1/generate-response`, {
+      const resp = await fetch(`${functionBaseUrl}/generate-response`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${anonKey}`,
         },
         body: JSON.stringify({
           text: text.trim(),
@@ -354,17 +350,13 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     try {
       console.log('Generating speech for:', text);
 
-      const baseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-      const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
-      if (!baseUrl || !anonKey) {
-        throw new Error('Backend URL or key missing. Please reload the preview.');
-      }
+      // Call public backend function directly using full Functions URL (no env needed)
+      const functionBaseUrl = 'https://wzkckhauiprbbmfeiyox.functions.supabase.co/functions/v1';
 
-      const resp = await fetch(`${baseUrl}/functions/v1/text-to-speech`, {
+      const resp = await fetch(`${functionBaseUrl}/text-to-speech`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${anonKey}`,
         },
         body: JSON.stringify({
           text,
