@@ -154,10 +154,11 @@ If detecting self-harm, suicide ideation, or immediate danger:
       }
     );
 
-  } catch (error) {
-    console.error('Error in generate-response:', error);
+  } catch (err) {
+    console.error('Error in generate-response:', err);
+    const message = err instanceof Error ? err.message : String(err);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: message }),
       {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
