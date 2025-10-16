@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useRef, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+
 
 // TypeScript declarations for Speech Recognition API
 interface SpeechRecognition extends EventTarget {
@@ -288,17 +288,32 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setError(null);
       console.log('Generating AI response for:', text);
 
-      const { data, error: functionError } = await supabase.functions.invoke('generate-response', {
-        body: {
+      const baseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+      const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
+      if (!baseUrl || !anonKey) {
+        throw new Error('Backend URL or key missing. Please reload the preview.');
+      }
+
+      const resp = await fetch(`${baseUrl}/functions/v1/generate-response`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${anonKey}`,
+        },
+        body: JSON.stringify({
           text: text.trim(),
           language: selectedLanguage,
           conversationHistory: conversationContext
-        }
+        })
       });
 
-      if (functionError) {
-        throw new Error(functionError.message);
+      if (!resp.ok) {
+        const errJson = await resp.json().catch(() => ({}));
+        throw new Error(errJson.error || `Function error: ${resp.status}`);
       }
+
+      const data = await resp.json();
+
 
       if (!data || !data.text) {
         throw new Error('Invalid response from AI service');
@@ -339,16 +354,31 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     try {
       console.log('Generating speech for:', text);
 
-      const { data, error: functionError } = await supabase.functions.invoke('text-to-speech', {
-        body: {
+      const baseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+      const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
+      if (!baseUrl || !anonKey) {
+        throw new Error('Backend URL or key missing. Please reload the preview.');
+      }
+
+      const resp = await fetch(`${baseUrl}/functions/v1/text-to-speech`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${anonKey}`,
+        },
+        body: JSON.stringify({
           text,
           voice: 'alloy'
-        }
+        })
       });
 
-      if (functionError) {
-        throw new Error(functionError.message);
+      if (!resp.ok) {
+        const errJson = await resp.json().catch(() => ({}));
+        throw new Error(errJson.error || `Function error: ${resp.status}`);
       }
+
+      const data = await resp.json();
+
 
       if (!data || !data.audioContent) {
         throw new Error('Invalid audio response');
