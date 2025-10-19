@@ -346,7 +346,7 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [selectedLanguage, conversationContext]);
 
-  const speakResponse = useCallback(async (text: string, autoPlay: boolean = true) => {
+  const speakResponse = useCallback(async (text: string, autoPlay: boolean = true): Promise<Blob | null> => {
     try {
       console.log('Generating speech for:', text);
 
@@ -396,13 +396,40 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } catch (err) {
       console.error('Text-to-speech error:', err);
       if (autoPlay && 'speechSynthesis' in window) {
-        speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = selectedLanguage;
-        utterance.rate = 0.9;
-        utterance.pitch = 1;
-        utterance.volume = 0.8;
-        speechSynthesis.speak(utterance);
+        return new Promise<null>((resolve) => {
+          // Wait for voices to load
+          const speak = () => {
+            speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = selectedLanguage;
+            
+            // Try to find a voice for the selected language
+            const voices = speechSynthesis.getVoices();
+            const languageVoice = voices.find(voice => 
+              voice.lang.startsWith(selectedLanguage.split('-')[0])
+            );
+            
+            if (languageVoice) {
+              utterance.voice = languageVoice;
+            }
+            
+            utterance.rate = 0.9;
+            utterance.pitch = 1;
+            utterance.volume = 0.8;
+            
+            utterance.onend = () => resolve(null);
+            utterance.onerror = () => resolve(null);
+            
+            speechSynthesis.speak(utterance);
+          };
+
+          // Voices might not be loaded yet
+          if (speechSynthesis.getVoices().length > 0) {
+            speak();
+          } else {
+            speechSynthesis.onvoiceschanged = () => speak();
+          }
+        });
       }
       return null;
     }
