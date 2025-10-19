@@ -54,6 +54,8 @@ declare global {
 
 // Language configurations with Indian languages prioritized
 export const SUPPORTED_LANGUAGES = {
+  'en-IN': { name: 'English (India)', nativeName: 'English', flag: '🇮🇳' },
+  'en-US': { name: 'English (US)', nativeName: 'English', flag: '🇺🇸' },
   'hi-IN': { name: 'Hindi', nativeName: 'हिन्दी', flag: '🇮🇳' },
   'te-IN': { name: 'Telugu', nativeName: 'తెలుగు', flag: '🇮🇳' },
   'ta-IN': { name: 'Tamil', nativeName: 'தமிழ்', flag: '🇮🇳' },
@@ -68,8 +70,6 @@ export const SUPPORTED_LANGUAGES = {
   'ne-IN': { name: 'Nepali', nativeName: 'नेपाली', flag: '🇮🇳' },
   'sa-IN': { name: 'Sanskrit', nativeName: 'संस्कृतम्', flag: '🇮🇳' },
   'ur-IN': { name: 'Urdu', nativeName: 'اردو', flag: '🇮🇳' },
-  'en-IN': { name: 'English (India)', nativeName: 'English', flag: '🇮🇳' },
-  'en-US': { name: 'English (US)', nativeName: 'English', flag: '🇺🇸' },
   'es-ES': { name: 'Spanish', nativeName: 'Español', flag: '🇪🇸' },
   'fr-FR': { name: 'French', nativeName: 'Français', flag: '🇫🇷' },
   'de-DE': { name: 'German', nativeName: 'Deutsch', flag: '🇩🇪' },
