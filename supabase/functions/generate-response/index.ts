@@ -91,35 +91,37 @@ If detecting self-harm, suicide ideation, or immediate danger:
         tools: [
           {
             type: 'function',
-            name: 'analyze_emotion_and_respond',
-            description: 'Analyze the user emotion and provide an empathetic response that directly addresses their specific words and concerns',
-            parameters: {
-              type: 'object',
-              properties: {
-                response: { 
-                  type: 'string',
-                  description: 'Your empathetic response that directly acknowledges and responds to the user\'s specific words and feelings'
+            function: {
+              name: 'analyze_emotion_and_respond',
+              description: 'Analyze the user emotion and provide an empathetic response that directly addresses their specific words and concerns',
+              parameters: {
+                type: 'object',
+                properties: {
+                  response: { 
+                    type: 'string',
+                    description: 'Your empathetic response that directly acknowledges and responds to the user\'s specific words and feelings'
+                  },
+                  emotion: {
+                    type: 'string',
+                    description: 'Primary detected emotion: anxiety, sadness, anger, stress, happiness, confusion, fear, frustration, loneliness, excitement'
+                  },
+                  intensity: {
+                    type: 'number',
+                    description: 'Emotion intensity from 0 to 1'
+                  },
+                  confidence: {
+                    type: 'number',
+                    description: 'Confidence in emotion detection from 0 to 1'
+                  },
+                  topics: {
+                    type: 'array',
+                    items: { type: 'string' },
+                    description: 'Relevant topics mentioned by user'
+                  }
                 },
-                emotion: {
-                  type: 'string',
-                  description: 'Primary detected emotion: anxiety, sadness, anger, stress, happiness, confusion, fear, frustration, loneliness, excitement'
-                },
-                intensity: {
-                  type: 'number',
-                  description: 'Emotion intensity from 0 to 1'
-                },
-                confidence: {
-                  type: 'number',
-                  description: 'Confidence in emotion detection from 0 to 1'
-                },
-                topics: {
-                  type: 'array',
-                  items: { type: 'string' },
-                  description: 'Relevant topics mentioned by user'
-                }
-              },
-              required: ['response', 'emotion', 'intensity', 'confidence', 'topics'],
-              additionalProperties: false
+                required: ['response', 'emotion', 'intensity', 'confidence', 'topics'],
+                additionalProperties: false
+              }
             }
           }
         ],
