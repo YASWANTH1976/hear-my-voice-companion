@@ -29,7 +29,7 @@ Deno.serve(async (req: Request) => {
     }
 
     // Convert conversation history into proper message format
-    const conversationMessages = [];
+    const conversationMessages: Array<{ role: 'user' | 'assistant'; content: string }> = [];
     if (conversationHistory && conversationHistory.length > 0) {
       conversationHistory.slice(-6).forEach((entry: string) => {
         if (entry.startsWith('User: ')) {
