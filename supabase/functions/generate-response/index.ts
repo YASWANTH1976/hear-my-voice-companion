@@ -28,9 +28,23 @@ Deno.serve(async (req: Request) => {
       throw new Error('LOVABLE_API_KEY not configured');
     }
 
-    const historyContext = conversationHistory && conversationHistory.length > 0
-      ? `\n\nConversation history:\n${conversationHistory.slice(-5).join('\n')}`
-      : '';
+    // Convert conversation history into proper message format
+    const conversationMessages = [];
+    if (conversationHistory && conversationHistory.length > 0) {
+      conversationHistory.slice(-6).forEach((entry: string) => {
+        if (entry.startsWith('User: ')) {
+          conversationMessages.push({
+            role: 'user',
+            content: entry.replace('User: ', '')
+          });
+        } else if (entry.startsWith('Assistant: ')) {
+          conversationMessages.push({
+            role: 'assistant',
+            content: entry.replace('Assistant: ', '')
+          });
+        }
+      });
+    }
 
     const systemPrompt = `You are HearMeOut, a warm, attentive voice-based mental wellness companion. Your primary job is to listen like a caring human and respond in a natural, conversational way that mirrors the speaker's words and emotional tone while offering safe, practical, personalized support. Do not act as a clinician or give medical diagnoses; instead, provide empathic listening, evidence-informed coping tools, and clear guidance about when to seek professional help.
 
@@ -80,6 +94,7 @@ CORE PRINCIPLES:
 6. Be like a supportive friend who truly understands and reads between the lines
 7. Provide SPECIFIC, ACTIONABLE suggestions tailored to their exact situation (not generic advice)
 8. Always respond in ${language} language
+9. REMEMBER previous conversations and build upon them - reference earlier topics and show continuity
 
 EMOTION DETECTION RULES (ENHANCED):
 - Carefully analyze the user's words, tone, context, AND conversation history
@@ -94,7 +109,7 @@ CRISIS DETECTION:
 If detecting self-harm, suicide ideation, or immediate danger:
 - Respond with immediate care and concern
 - Provide crisis hotline: India 91529-87821 (AASRA), International 988
-- Strongly encourage immediate professional help${historyContext}`;
+- Strongly encourage immediate professional help`;
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -106,6 +121,7 @@ If detecting self-harm, suicide ideation, or immediate danger:
         model: 'google/gemini-2.5-flash',
         messages: [
           { role: 'system', content: systemPrompt },
+          ...conversationMessages,
           { role: 'user', content: text }
         ],
         tools: [
