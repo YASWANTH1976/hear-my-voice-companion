@@ -69,7 +69,7 @@ Languages supported:
   - Text-to-speech synthesis
   - AI response generation
 - **AI Model**: Google Gemini 2.5 Flash (via Lovable AI Gateway)
-- **API Gateway**: Lovable AI (https://ai.gateway.lovable.dev)
+- **API Gateway**: Lovable AI 
 
 ### Key Technologies
 - **Voice Processing**: Web Audio API, MediaRecorder API
